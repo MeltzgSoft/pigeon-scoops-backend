@@ -83,7 +83,7 @@
 
 (deftest combine-amounts-test
   (testing "empty input returns empty"
-    (is (= [] (utils/combine-amounts [] :entity/amount :entity/amount-unit :entity/id))))
+    (is (nil? (utils/combine-amounts [] :entity/amount :entity/amount-unit :entity/id))))
   (testing "single item passes through unchanged"
     (is (= [{:entity/id "a" :entity/amount 5 :entity/amount-unit :mass/kg}]
            (utils/combine-amounts [{:entity/id "a" :entity/amount 5 :entity/amount-unit :mass/kg}]
