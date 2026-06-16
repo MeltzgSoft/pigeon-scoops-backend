@@ -32,7 +32,8 @@
                  :extra-deps  {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}
                                ring/ring-mock                       {:mvn/version "0.6.2"}
                                integrant/repl                       {:mvn/version "0.5.1"}
-                               org.testcontainers/postgresql        {:mvn/version "1.21.4"}}
+                               org.testcontainers/postgresql        {:mvn/version "1.21.4"}
+                               buddy/buddy-sign                     {:mvn/version "3.6.1-359"}}
                  :main-opts   ["-m" "cognitect.test-runner"]
                  :exec-fn     cognitect.test-runner.api/test}
   :test-cleanup {:extra-paths ["test"]

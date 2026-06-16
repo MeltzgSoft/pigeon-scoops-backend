@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.test-system
-  (:require [clj-http.client :as http]
+  (:require [buddy.sign.jwt :as jwt-sign]
             [clojure.test :refer [do-report]]
             [environ.core :refer [env]]
             [integrant.core :as ig]
@@ -10,42 +10,69 @@
             [pigeon-scoops-backend.utils :refer [load-config! init-system!]]
             [pigeon-scoops-backend.db-tasks]
             [ring.mock.request :as mock]
-            [clojure.java.io :as io]
-            [clojure.edn :as edn]
-            [clojure.pprint :refer [pprint]]
             [pigeon-scoops-backend.server])
   (:import (java.net Socket)
-           (java.util UUID)
-           (org.testcontainers.containers PostgreSQLContainer)))
+           (java.security KeyPairGenerator)
+           (java.util Date UUID)))
+
+(def ^:private test-key-pair
+  (let [gen (KeyPairGenerator/getInstance "RSA")]
+    (.initialize gen 2048)
+    (.generateKeyPair gen)))
 
 (def tokens (atom nil))
 (def test-users (atom nil))
-(def test-users-file "dev/resources/test-users.edn")
+(def ^:private test-roles (atom {}))
 
-(defn get-test-token! [{:keys [test-client-id username password]}]
-  (->> {:content-type  :json
-        :cookie-policy :standard
-        :body          (m/encode "application/json"
-                                 {:client_id  test-client-id
-                                  :audience   "https://pigeon-scoops.us.auth0.com/api/v2/"
-                                  :grant_type "password"
-                                  :username   username
-                                  :password   password
-                                  :scope      "openid profile email"})}
-       (http/post "https://pigeon-scoops.us.auth0.com/oauth/token")
-       (m/decode-response-body)
-       :access_token))
+;; Maps Auth0 role names to permissions using "action:resource" convention.
+;; The JWT middleware converts "action:resource" → :action/resource for permission checks.
+(def ^:private role->permissions
+  {:manage-roles      ["edit:role"]
+   :manage-groceries  ["view:grocery" "create:grocery" "edit:grocery" "delete:grocery"]
+   :manage-recipes    ["create:recipe" "edit:recipe" "delete:recipe"]
+   :manage-menus      ["create:menu" "edit:menu" "delete:menu"]
+   :manage-orders     ["create:order" "edit:order"]
+   :manage-production ["manage:production"]})
+
+(defn- make-test-token [{:keys [uid username]}]
+  (let [perms (->> (get @test-roles uid #{})
+                   (mapcat role->permissions)
+                   distinct
+                   vec)]
+    (jwt-sign/sign
+     {:sub                                  uid
+      :iss                                  "https://pigeon-scoops.us.auth0.com/"
+      :exp                                  (Date. ^long (+ (System/currentTimeMillis) (* 3600 1000)))
+      "https://api.pigeon-scoops.com/email" username
+      "https://api.pigeon-scoops.com/perms" perms}
+     (.getPrivate test-key-pair)
+     {:alg :rs256})))
+
+(defn- local-update-roles! [uid roles]
+  (swap! test-roles assoc uid (set roles))
+  true)
+
+(defn- local-get-roles->uids! []
+  (reduce-kv (fn [m uid roles]
+               (reduce (fn [acc role] (update acc role (fnil conj #{}) uid))
+                       m
+                       roles))
+             {}
+             @test-roles))
+
+(defn- local-jwt-config []
+  {:issuers {"https://pigeon-scoops.us.auth0.com/"
+             {:alg        :RS256
+              :public-key (.getPublic test-key-pair)}}})
 
 (defn test-endpoint
   ([method uri]
    (test-endpoint method uri nil))
-  ([method uri {:keys [use-other-user params use-auth? body retry-status] :as opts}]
-   (let [app (-> state/system :server/routes)
-         auth (-> state/system :auth/auth0)
+  ([method uri {:keys [use-other-user params use-auth? body retry-status]}]
+   (let [app   (-> state/system :server/routes)
+         user  (if use-other-user (second @test-users) (first @test-users))
          token (or (if use-other-user (second @tokens) (first @tokens))
-                   (if use-other-user
-                     (get-test-token! (conj auth (second @test-users)))
-                     (get-test-token! (conj auth (first @test-users)))))
+                   (make-test-token user))
          request (-> (mock/request method uri params)
                      (cond-> use-auth? (mock/header :authorization (str "Bearer " token))
                              body (mock/json-body body)))
@@ -54,15 +81,14 @@
                             (not= (:status resp) retry-status))
                       resp
                       (do
-                        (println "requst failed. retrying" resp)
-                        (Thread/sleep 1000)
+                        (println "request failed. retrying" resp)
                         (recur (app request)))))
          response (update response :body #(try
                                             (m/decode "application/json" %)
                                             (catch Exception e
                                               (println "FAILED TO DECODE" % "RESPONSE" response)
                                               (throw e))))]
-     (println method uri opts response)
+     (println method uri response)
      response)))
 
 (defn port-available? [port]
@@ -96,13 +122,12 @@
       :setup (when-not state/system
                (fn []
                  (reset! postgres-container
-                         (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
+                         (doto (org.testcontainers.containers.PostgreSQLContainer. "postgres:latest")
                            (.withDatabaseName "test_db")
                            (.withUsername "user")
                            (.withPassword "password")
                            (.start)))
-                 (let [port (find-next-available-port (range 3000 4000))
-
+                 (let [port     (find-next-available-port (range 3000 4000))
                        full-uri (str (.getJdbcUrl @postgres-container)
                                      "&user=" (.getUsername @postgres-container)
                                      "&password=" (.getPassword @postgres-container))]
@@ -122,6 +147,9 @@
                             (assoc-in [:db/postgres :jdbc-url] full-uri)
                             (assoc-in [:server/jetty :port] port)
                             (assoc-in [:auth/auth0 :skip-auth0-delete?] true)
+                            (assoc-in [:auth/auth0 :jwt-config] (local-jwt-config))
+                            (assoc-in [:auth/auth0 :update-roles-fn] local-update-roles!)
+                            (assoc-in [:auth/auth0 :get-roles->uids-fn] local-get-roles->uids!)
                             (ig/expand)))))
                    (ig-repl/go))))
       :teardown (fn []
@@ -134,51 +162,30 @@
   ([manage-user?]
    (strict-fixture
     {:setup    (fn []
-                 (let [auth (:auth/auth0 state/system)
-                       local-users (when (.exists (io/file test-users-file))
-                                     (-> test-users-file
-                                         (slurp)
-                                         (edn/read-string)))]
-                   (if local-users
-                     (do
-                       (println "using existing users")
-                       (reset! test-users local-users))
-                     (let [usernames (repeatedly 2 #(str "integration-test" (UUID/randomUUID) "@pigeon-scoops.com"))
-                           passwords (repeatedly 2 #(str (UUID/randomUUID)))
-                           create-responses (map #(auth0/create-user! auth
-                                                                      {:connection "Username-Password-Authentication"
-                                                                       :email      %1
-                                                                       :password   %2})
-                                                 usernames
-                                                 passwords)]
-                       (reset! test-users (mapv #(hash-map :username %1
-                                                           :password %2
-                                                           :uid (:user_id %3))
-                                                usernames
-                                                passwords
-                                                create-responses))))
-                   (spit test-users-file (with-out-str (pprint @test-users)))
-                   (reset! tokens (mapv #(get-test-token! (conj auth %)) @test-users))
+                 (reset! test-roles {})
+                 (let [uids      (repeatedly 2 #(str "local|" (UUID/randomUUID)))
+                       usernames (repeatedly 2 #(str "integration-test" (UUID/randomUUID) "@pigeon-scoops.com"))]
+                   (reset! test-users (mapv #(hash-map :uid %1 :username %2) uids usernames))
+                   (reset! tokens (mapv make-test-token @test-users))
                    (when manage-user?
-                     (mapv #(test-endpoint :post "/v1/account" {:use-auth? true :retry-status 401 :use-other-user %}) [true false]))))
-     :teardown #(Thread/sleep 2000)
+                     (mapv #(test-endpoint :post "/v1/account" {:use-auth? true :use-other-user %}) [true false]))))
+     :teardown (fn []
+                 (reset! tokens nil)
+                 (reset! test-roles {}))
      :msg      "account fixture failed"})))
 
 (defn make-roles-fixture [& roles]
   (strict-fixture
    {:setup    (fn []
-                (let [auth (:auth/auth0 state/system)
+                (let [auth           (:auth/auth0 state/system)
                       roles-per-user (if (keyword? (first roles))
                                        (repeat (count @test-users) roles)
                                        roles)]
                   (doall
-                   (map (fn [{:keys [uid]} roles]
-                          (println "ROLES" roles (auth0/update-roles! auth uid roles))
-                          (when (env :ci-env)
-                            (Thread/sleep 500)))
+                   (map (fn [{:keys [uid]} user-roles]
+                          (auth0/update-roles! auth uid user-roles))
                         @test-users
                         roles-per-user))
-                  (reset! tokens (mapv #(get-test-token! (conj auth %)) @test-users))))
-
+                  (reset! tokens (mapv make-test-token @test-users))))
     :teardown #(reset! tokens nil)
     :msg      "make roles failed"}))
