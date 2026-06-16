@@ -25,7 +25,7 @@
     <orderEntry type="library" name="Deps: org.apache.httpcomponents.core5/httpcore5-h2:5.3.4" level="project" />
     <orderEntry type="library" name="Deps: org.eclipse.jetty.ee9.websocket/jetty-ee9-websocket-jetty-api:12.1.8" level="project" />
     <orderEntry type="library" name="Deps: org.eclipse.jetty/jetty-xml:12.1.8" level="project" />
-    <orderEntry type="library" name="Deps: com.zaxxer/HikariCP:7.0.2" level="project" />
+    <orderEntry type="library" name="Deps: com.zaxxer/HikariCP:7.1.0" level="project" />
     <orderEntry type="library" name="Deps: org.apache.commons/commons-compress:1.24.0" level="project" />
     <orderEntry type="library" name="Deps: ring/ring-devel:1.15.4" level="project" />
     <orderEntry type="library" name="Deps: com.auth0/java-jwt:3.12.0" level="project" />
@@ -58,7 +58,7 @@
     <orderEntry type="library" name="Deps: com.fasterxml.jackson.dataformat/jackson-dataformat-cbor:2.18.3" level="project" />
     <orderEntry type="library" name="Deps: com.googlecode.json-simple/json-simple:1.1.1" level="project" />
     <orderEntry type="library" name="Deps: org.testcontainers/testcontainers:1.21.4" level="project" />
-    <orderEntry type="library" name="Deps: ch.qos.logback/logback-core:1.5.33" level="project" />
+    <orderEntry type="library" name="Deps: ch.qos.logback/logback-core:1.5.34" level="project" />
     <orderEntry type="library" name="Deps: org.bouncycastle/bcpkix-jdk18on:1.78.1" level="project" />
     <orderEntry type="library" name="Deps: slingshot:0.12.2" level="project" />
     <orderEntry type="library" name="Deps: org.apache.httpcomponents/httpcore-nio:4.4.15" level="project" />
@@ -68,7 +68,7 @@
     <orderEntry type="library" name="Deps: com.google.guava/listenablefuture:9999.0-empty-to-avoid-conflict-with-guava" level="project" />
     <orderEntry type="library" name="Deps: org.postgresql/postgresql:42.7.11" level="project" />
     <orderEntry type="library" name="Deps: org.clojure/tools.namespace:1.5.0" level="project" />
-    <orderEntry type="library" name="Deps: com.github.seancorfield/honeysql:2.7.1368" level="project" />
+    <orderEntry type="library" name="Deps: com.github.seancorfield/honeysql:2.7.1388" level="project" />
     <orderEntry type="library" name="Deps: fipp:0.6.29" level="project" />
     <orderEntry type="library" name="Deps: metosin/reitit-swagger:0.10.1" level="project" />
     <orderEntry type="library" name="Deps: com.fasterxml.jackson.core/jackson-core:2.21.1" level="project" />
@@ -76,7 +76,7 @@
     <orderEntry type="library" name="Deps: org.ring-clojure/ring-jakarta-servlet:1.15.4" level="project" />
     <orderEntry type="library" name="Deps: clj-http:3.13.1" level="project" />
     <orderEntry type="library" name="Deps: org.slf4j/jul-to-slf4j:2.0.18" level="project" />
-    <orderEntry type="library" name="Deps: org.flywaydb/flyway-database-postgresql:12.7.0" level="project" />
+    <orderEntry type="library" name="Deps: org.flywaydb/flyway-database-postgresql:12.8.1" level="project" />
     <orderEntry type="library" name="Deps: metosin/reitit-ring:0.10.1" level="project" />
     <orderEntry type="library" name="Deps: org.eclipse.jetty.ee9/jetty-ee9-servlet:12.1.8" level="project" />
     <orderEntry type="library" name="Deps: org.eclipse.jetty/jetty-unixdomain-server:12.1.8" level="project" />
@@ -144,7 +144,7 @@
     <orderEntry type="library" name="Deps: metosin/reitit-http:0.10.1" level="project" />
     <orderEntry type="library" name="Deps: fi.metosin/reitit-openapi:0.10.1" level="project" />
     <orderEntry type="library" name="Deps: org.eclipse.jetty.websocket/jetty-websocket-core-common:12.1.8" level="project" />
-    <orderEntry type="library" name="Deps: org.flywaydb/flyway-core:12.7.0" level="project" />
+    <orderEntry type="library" name="Deps: org.flywaydb/flyway-core:12.8.1" level="project" />
     <orderEntry type="library" name="Deps: clj-stacktrace:0.2.8" level="project" />
     <orderEntry type="library" name="Deps: org.slf4j/slf4j-api:2.0.18" level="project" />
     <orderEntry type="library" name="Deps: buddy/buddy-sign:3.6.1-359" level="project" />
@@ -159,7 +159,7 @@
     <orderEntry type="library" name="Deps: metosin/jsonista:0.3.14" level="project" />
     <orderEntry type="library" name="Deps: metosin/reitit-swagger-ui:0.10.1" level="project" />
     <orderEntry type="library" name="Deps: metosin/reitit:0.10.1" level="project" />
-    <orderEntry type="library" name="Deps: ch.qos.logback/logback-classic:1.5.33" level="project" />
+    <orderEntry type="library" name="Deps: ch.qos.logback/logback-classic:1.5.34" level="project" />
     <orderEntry type="library" name="Deps: tech.droit/clj-diff:1.0.1" level="project" />
     <orderEntry type="library" name="Deps: camel-snake-kebab:0.4.3" level="project" />
     <orderEntry type="library" name="Deps: ring:1.15.4" level="project" />
