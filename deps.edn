@@ -36,11 +36,6 @@
                                buddy/buddy-sign                     {:mvn/version "3.6.1-359"}}
                  :main-opts   ["-m" "cognitect.test-runner"]
                  :exec-fn     cognitect.test-runner.api/test}
-  :test-cleanup {:extra-paths ["test"]
-                 :extra-deps  {ring/ring-mock                {:mvn/version "0.6.2"}
-                               integrant/repl                {:mvn/version "0.5.1"}
-                               org.testcontainers/postgresql {:mvn/version "1.21.4"}}
-                 :main-opts   ["-m" "pigeon-scoops-backend.cleanup"]}
   :dev          {:extra-paths ["dev/src" "test"]
                  :extra-deps  {ring/ring-mock                {:mvn/version "0.6.2"}
                                integrant/repl                {:mvn/version "0.5.1"}
