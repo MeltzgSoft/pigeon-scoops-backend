@@ -10,7 +10,7 @@
 
 (defn routes [{db :jdbc-url}]
   ["/menus" {:openapi    {:tags ["menus"]}}
-   ["" {:get  {:handler   (menu/list-all-menus db)
+   ["" {:get  {:handler   (menu/list-all-menus! db)
                :parameters {:query {(ds/opt :include-inactive) boolean?
                                     (ds/opt :detailed) boolean?}}
                :responses {200 {:body [responses/menu]}}
@@ -25,7 +25,7 @@
                                                                  responses/durations)}}
                :summary    "create menu"}}]
    ["/:menu-id" {:parameters {:path {:menu-id uuid?}}}
-    ["" {:get    {:handler   (menu/retrieve-menu db)
+    ["" {:get    {:handler   (menu/retrieve-menu! db)
                   :responses {200 {:body responses/menu}}
                   :summary   "retrieve menu"}
          :put    {:handler    (menu/update-menu! db)

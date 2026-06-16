@@ -6,7 +6,7 @@
   (:import (java.time ZonedDateTime)
            (java.util UUID)))
 
-(defn list-all-menus [db]
+(defn list-all-menus! [db]
   (fn [request]
     (let [{:keys [detailed include-inactive]} (-> request :parameters :query)]
       (rr/response (vec (menu-db/find-all-menus! db include-inactive detailed))))))
@@ -23,7 +23,7 @@
       (rr/created (str responses/base-url "/menus/" menu-id)
                   {:id menu-id}))))
 
-(defn retrieve-menu [db]
+(defn retrieve-menu! [db]
   (fn [request]
     (let [menu-id (-> request :parameters :path :menu-id)
           menu (menu-db/find-menu-by-id! db menu-id)]

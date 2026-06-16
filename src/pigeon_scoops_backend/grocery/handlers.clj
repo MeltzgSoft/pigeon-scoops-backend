@@ -4,7 +4,7 @@
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
-(defn list-all-groceries [db]
+(defn list-all-groceries! [db]
   (fn [_]
     (rr/response (vec (grocery-db/find-all-groceries! db)))))
 
@@ -16,7 +16,7 @@
       (rr/created (str responses/base-url "/groceries/" grocery-id)
                   {:id grocery-id}))))
 
-(defn retrieve-grocery [db]
+(defn retrieve-grocery! [db]
   (fn [request]
     (let [grocery-id (-> request :parameters :path :grocery-id)
           grocery (grocery-db/find-grocery-by-id! db grocery-id)]

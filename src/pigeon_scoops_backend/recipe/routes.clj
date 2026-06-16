@@ -11,7 +11,7 @@
 
 (defn routes [{db :jdbc-url}]
   ["/recipes" {:openapi    {:tags ["recipes"]}}
-   ["" {:get  {:handler   (recipe/list-all-recipes db)
+   ["" {:get  {:handler   (recipe/list-all-recipes! db)
                :responses {200 {:body [responses/recipe]}}
                :summary   "list of recipes"}
         :post {:handler    (recipe/create-recipe! db)
@@ -29,7 +29,7 @@
                :responses  {201 {:body {:id uuid?}}}
                :summary    "Create recipe"}}]
    ["/:recipe-id" {:parameters {:path {:recipe-id uuid?}}}
-    ["" {:get    {:handler    (recipe/retrieve-recipe db)
+    ["" {:get    {:handler    (recipe/retrieve-recipe! db)
                   :parameters {:query {(ds/opt :amount)      number?
                                        (ds/opt :amount-unit) (s/and keyword? (set (concat common/other-units
                                                                                           (keys mass/conversion-map)
@@ -54,7 +54,7 @@
                   :middleware [[(mw/wrap-with-permission :delete/recipe)]]
                   :response   {204 {:body nil?}}
                   :summary    "Delete recipe"}}]
-    ["/bom" {:get {:handler    (recipe/retrieve-recipe-bom db)
+    ["/bom" {:get {:handler    (recipe/retrieve-recipe-bom! db)
                    :parameters {:query {:amount      number?
                                         :amount-unit (s/and keyword? (set (concat common/other-units
                                                                                   (keys mass/conversion-map)

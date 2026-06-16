@@ -12,7 +12,7 @@
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
-(defn list-all-orders [db]
+(defn list-all-orders! [db]
   (fn [request]
     (let [production-manager? (production-manager? request)
           {admin-request? :admin detailed? :detailed} (-> request :parameters :query)
@@ -32,7 +32,7 @@
       (rr/created (str responses/base-url "/orders/" order-id)
                   {:id order-id}))))
 
-(defn retrieve-order [db]
+(defn retrieve-order! [db]
   (fn [request]
     (let [order-id (-> request :parameters :path :order-id)
           order (order-db/find-order-by-id! db order-id)]
@@ -238,7 +238,7 @@
                   (rr/status 204))
                 (rr/bad-request (-> request :parameters :body))))))))))
 
-(defn retrieve-order-bom [db]
+(defn retrieve-order-bom! [db]
   (fn [request]
     (with-connection!
       db
@@ -262,7 +262,7 @@
                                              vec)))]
           (rr/response (vec grocery-bom)))))))
 
-(defn list-in-progress-items [db]
+(defn list-in-progress-items! [db]
   (fn [request]
     (let [separate-sizes? (-> request :parameters :query :separate-sizes)]
       (-> (order-db/find-all-items-by-status! db :status/in-progress)

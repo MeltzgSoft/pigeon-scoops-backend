@@ -14,7 +14,7 @@
 (defn routes [{db :jdbc-url}]
   [["/production" {:openapi {:tags ["production"]}
                    :middleware [[(mw/wrap-with-permission :manage/production)]]}
-    ["" {:get {:handler (order/list-in-progress-items db)
+    ["" {:get {:handler (order/list-in-progress-items! db)
                :parameters {:query {(ds/opt :separate-sizes) boolean?}}
                :response [responses/order-item]
                :summary "list order items for in-progress orders"}}]
@@ -23,7 +23,7 @@
                            :responses {204 {:body nil?}}
                            :summary "mark all in progress items for this recipe as complete"}}]]
    ["/orders" {:openapi    {:tags ["orders"]}}
-    ["" {:get  {:handler   (order/list-all-orders db)
+    ["" {:get  {:handler   (order/list-all-orders! db)
                 :parameters {:query {(ds/opt :admin) boolean?
                                      (ds/opt :detailed) boolean?}}
                 :responses {200 {:body [responses/order]}}
@@ -34,7 +34,7 @@
                 :responses  {201 {:body {:id uuid?}}}}}]
     ["/:order-id" {:parameters {:path {:order-id uuid?}}
                    :middleware [[(mw/wrap-owner :order-id :user-order order-db/find-order-by-id! production-manager?) db]]}
-     ["" {:get    {:handler   (order/retrieve-order db)
+     ["" {:get    {:handler   (order/retrieve-order! db)
                    :responses {200 {:body responses/order}}
                    :summary   "Retrieve order"}
           :put    {:handler    (order/update-order! db)
@@ -45,7 +45,7 @@
           :delete {:handler    (order/delete-order! db)
                    :responses  {204 {:body nil?}}
                    :summary    "delete order"}}]
-     ["/bom" {:get {:handler   (order/retrieve-order-bom db)
+     ["/bom" {:get {:handler   (order/retrieve-order-bom! db)
                     :responses {200 {:body [grocery-responses/grocery]}}
                     :summary   "Retrieve order bom"}}]
      ["/items" {:middleware [[(mw/wrap-with-permission :edit/order)]]}

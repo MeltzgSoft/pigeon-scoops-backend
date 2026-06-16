@@ -4,15 +4,11 @@
             [ring.middleware.jwt :as jwt]
             [ring.util.response :as rr]))
 
-(def wrap-auth0
+(defn wrap-auth0 [jwt-config]
   {:name        ::auth0
    :description "Middleware for auth0 authentication and authorization"
    :wrap        (fn [handler]
-                  (jwt/wrap-jwt
-                   handler
-                   {:issuers {"https://pigeon-scoops.us.auth0.com/"
-                              {:alg          :RS256
-                               :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}))})
+                  (jwt/wrap-jwt handler jwt-config))})
 
 (def wrap-remove-nil-keys
   {:name        ::remove-nil-keys

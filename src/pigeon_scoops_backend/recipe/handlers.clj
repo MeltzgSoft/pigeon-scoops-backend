@@ -8,7 +8,7 @@
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
-(defn list-all-recipes [db]
+(defn list-all-recipes! [db]
   (fn [_]
     (let [recipes (->> (recipe-db/find-all-recipes! db false)
                        (map transforms/anonymize-mystery-recipe))]
@@ -22,7 +22,7 @@
       (rr/created (str responses/base-url "/recipes/" recipe-id)
                   {:id recipe-id}))))
 
-(defn retrieve-recipe [db]
+(defn retrieve-recipe! [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           {:keys [amount amount-unit]} (-> request
@@ -116,7 +116,7 @@
         (rr/status 204)
         (rr/bad-request {:ingredient/id ingredient-id})))))
 
-(defn retrieve-recipe-bom [db]
+(defn retrieve-recipe-bom! [db]
   (fn [request]
     (with-connection!
       db

@@ -82,6 +82,31 @@
     (is (not (utils/production-manager? {:claims {}})))))
 
 (deftest combine-amounts-test
+  (testing "empty input returns empty"
+    (is (nil? (utils/combine-amounts [] :entity/amount :entity/amount-unit :entity/id))))
+  (testing "single item passes through unchanged"
+    (is (= [{:entity/id "a" :entity/amount 5 :entity/amount-unit :mass/kg}]
+           (utils/combine-amounts [{:entity/id "a" :entity/amount 5 :entity/amount-unit :mass/kg}]
+                                  :entity/amount :entity/amount-unit :entity/id))))
+  (testing "two items with same unit and discriminant are summed"
+    (is (= [{:entity/id "a" :entity/amount 7 :entity/amount-unit :mass/kg}]
+           (utils/combine-amounts [{:entity/id "a" :entity/amount 3 :entity/amount-unit :mass/kg}
+                                   {:entity/id "a" :entity/amount 4 :entity/amount-unit :mass/kg}]
+                                  :entity/amount :entity/amount-unit :entity/id))))
+  (testing "nil discriminant key values group together"
+    (is (= 1 (count (utils/combine-amounts [{:entity/amount 1 :entity/amount-unit :mass/kg}
+                                            {:entity/amount 2 :entity/amount-unit :mass/kg}]
+                                           :entity/amount :entity/amount-unit :entity/id)))))
+  (testing "different discriminants produce separate groups"
+    (is (= 2 (count (utils/combine-amounts [{:entity/id "a" :entity/amount 1 :entity/amount-unit :mass/kg}
+                                            {:entity/id "b" :entity/amount 2 :entity/amount-unit :mass/kg}]
+                                           :entity/amount :entity/amount-unit :entity/id)))))
+  (testing "mixed units within same discriminant group are converted to the sink unit"
+    (let [[result] (utils/combine-amounts [{:entity/id "a" :entity/amount 1 :entity/amount-unit :mass/kg}
+                                           {:entity/id "a" :entity/amount 1000 :entity/amount-unit :mass/g}]
+                                          :entity/amount :entity/amount-unit :entity/id)]
+      (is (= :mass/kg (:entity/amount-unit result)))
+      (is (< (abs (- 2.0 (:entity/amount result))) 0.0001))))
   (testing "A list of amounts can be combined by discriminant keys and unit type"
     (is (= (utils/combine-amounts [{:entity/entity-discriminant-key-1 "good stuff"
                                     :entity/amount               1

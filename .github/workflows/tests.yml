@@ -24,15 +24,4 @@ jobs:
         with:
           cli: latest
       - name: Run tests
-        env:
-          MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
-          MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
-          TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
         run: clojure -X:test
-      - name: Cleanup test users
-        if: always()
-        env:
-          MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
-          MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
-          TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
-        run: clojure -M:test-cleanup

@@ -70,42 +70,46 @@
        (http/get "https://pigeon-scoops.us.auth0.com/api/v2/users")
        (m/decode-response-body)))
 
-(defn get-roles->uids! [auth]
-  (let [token (get-management-token! auth)
-        roles (get-roles! token)]
-    (->> roles
-         (map #(vector (-> % :name keyword)
-                       (->> {:headers {"Authorization" (str "Bearer " token)}
-                             :cookie-policy :standard
-                             :content-type :json}
-                            (http/get (str "https://pigeon-scoops.us.auth0.com/api/v2/roles/" (:id %) "/users"))
-                            (m/decode-response-body)
-                            (map :user_id))))
-         (into {}))))
+(defn get-roles->uids! [{:keys [get-roles->uids-fn] :as auth}]
+  (if get-roles->uids-fn
+    (get-roles->uids-fn)
+    (let [token (get-management-token! auth)
+          roles (get-roles! token)]
+      (->> roles
+           (map #(vector (-> % :name keyword)
+                         (->> {:headers {"Authorization" (str "Bearer " token)}
+                               :cookie-policy :standard
+                               :content-type :json}
+                              (http/get (str "https://pigeon-scoops.us.auth0.com/api/v2/roles/" (:id %) "/users"))
+                              (m/decode-response-body)
+                              (map :user_id))))
+           (into {})))))
 
-(defn update-roles! [auth uid roles]
-  (let [token (get-management-token! auth)
-        current-roles (->> {:headers {"Authorization" (str "Bearer " token)}
-                            :cookie-policy :standard
-                            :content-type :json}
-                           (http/get (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid "/roles"))
-                           (m/decode-response-body)
-                           (map (comp keyword :name)))
-        to-delete (set/difference (set current-roles)
-                                  (set roles))
-        to-add (set/difference (set roles)
-                               (set current-roles))]
-    (every? true? (map (fn [[method roles]]
-                         (if (seq roles)
-                           (->> {:headers          {"Authorization" (str "Bearer " token)}
-                                 :cookie-policy    :standard
-                                 :content-type     :json
-                                 :throw-exceptions false
-                                 :body             (m/encode "application/json"
-                                                             {:roles (get-role-ids! token (map name roles))})}
-                                (method (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid "/roles"))
-                                :status
-                                (= 204))
-                           true))
-                       {http/delete to-delete
-                        http/post to-add}))))
+(defn update-roles! [{:keys [update-roles-fn] :as auth} uid roles]
+  (if update-roles-fn
+    (update-roles-fn uid roles)
+    (let [token (get-management-token! auth)
+          current-roles (->> {:headers {"Authorization" (str "Bearer " token)}
+                              :cookie-policy :standard
+                              :content-type :json}
+                             (http/get (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid "/roles"))
+                             (m/decode-response-body)
+                             (map (comp keyword :name)))
+          to-delete (set/difference (set current-roles)
+                                    (set roles))
+          to-add (set/difference (set roles)
+                                 (set current-roles))]
+      (every? true? (map (fn [[method roles]]
+                           (if (seq roles)
+                             (->> {:headers          {"Authorization" (str "Bearer " token)}
+                                   :cookie-policy    :standard
+                                   :content-type     :json
+                                   :throw-exceptions false
+                                   :body             (m/encode "application/json"
+                                                               {:roles (get-role-ids! token (map name roles))})}
+                                  (method (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid "/roles"))
+                                  :status
+                                  (= 204))
+                             true))
+                         {http/delete to-delete
+                          http/post to-add})))))

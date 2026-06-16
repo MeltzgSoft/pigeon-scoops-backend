@@ -21,7 +21,7 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.params :refer [wrap-params]]))
 
-(def router-config
+(defn- router-config [jwt-config]
   {:validate  rs/validate
    :exception pretty/exception
    :data      {:coercion   coercion-spec/coercion
@@ -38,7 +38,7 @@
                             wrap-params
                             coercion/coerce-request-middleware
                             coercion/coerce-response-middleware
-                            mw/wrap-auth0
+                            (mw/wrap-auth0 jwt-config)
                             mw/wrap-remove-nil-keys]}})
 
 (def openapi-docs
@@ -52,7 +52,7 @@
                                                            :bearerFormat "JWT"}}}}
           :handler (openapi/create-openapi-handler)}}])
 
-(defn routes [env]
+(defn routes [{:keys [auth] :as env}]
   (wrap-with-logger
    (ring/ring-handler
     (ring/router
@@ -65,7 +65,7 @@
        (user-order/routes env)
        (util-api/routes)
        (account/routes env)]]
-     router-config)
+     (router-config (:jwt-config auth)))
     (ring/routes
      (swagger-ui/create-swagger-ui-handler
       {:path   "/"

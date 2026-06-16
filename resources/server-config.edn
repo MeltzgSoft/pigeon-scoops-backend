@@ -3,7 +3,10 @@
  :server/routes {:jdbc-url #ig/ref :db/postgres
                              :auth     #ig/ref :auth/auth0}
  :db/postgres               {:jdbc-url "jdbc-url"}
- :auth/auth0                {:test-client-id           "test-client-id"
+ :auth/auth0                {:jwt-config               {:issuers {"https://pigeon-scoops.us.auth0.com/"
+                                                                    {:alg          :RS256
+                                                                     :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}
+                             :test-client-id           "test-client-id"
                              :management-client-id     "client-id"
                              :management-client-secret "client-secret"}
  :db-tasks/scheduler        {:jdbc-url #ig/ref :db/postgres
