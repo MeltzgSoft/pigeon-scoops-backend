@@ -1,20 +1,29 @@
 name: Publish Docker Image
 
+# Tag-driven (usb-ci FR-10.1): fires when a v#.#.# tag lands on GitHub --
+# after migration, that means via the Forgejo push mirror, whose
+# PAT-authenticated pushes fire workflows (verified: usb-ci #27).
+#
+# This replaces the old workflow_run chain after "Clojure CI Tests": CI runs
+# on the forge now, this repo on GitHub is a read-only mirror, and
+# publication is its only remaining job (usb-ci FR-10.4). The cadence
+# changes deliberately with it: Docker Hub updates when a release is tagged,
+# not on every merge to main.
+
 on:
-  workflow_run:
-    workflows: ["Clojure CI Tests"]
-    types:
-      - completed
-    branches:
-      - main
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - name: Login to Docker Hub
         uses: docker/login-action@v4
         with:
@@ -27,4 +36,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: vadercows/pigeon-backend:latest,vadercows/pigeon-backend:${{ github.sha }}
+          tags: vadercows/pigeon-backend:latest,vadercows/pigeon-backend:${{ env.VERSION }}

@@ -1,0 +1,51 @@
+name: Clojure CI Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    # The general runner (usb-ci TS 6.2): jobs run in containers with no
+    # docker socket, so testcontainers cannot work here. Postgres arrives as
+    # a services: sidecar instead, injected via TEST_JDBC_URL -- see
+    # test_system.clj, which falls back to testcontainers when unset (local
+    # dev keeps the zero-setup path).
+    runs-on: linux
+
+    env:
+      CI_ENV: true
+      TEST_JDBC_URL: jdbc:postgresql://postgres:5432/test_db?user=user&password=password
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+        # Without a health check the job races Postgres's startup and the
+        # first connection attempt loses.
+        options: >-
+          --health-cmd "pg_isready -U user -d test_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java 21
+        # Fully qualified: only a subset of actions is mirrored on
+        # data.forgejo.org, and job containers have public egress for this.
+        uses: https://github.com/actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'temurin'
+      - name: Set up Clojure
+        uses: https://github.com/DeLaGuardo/setup-clojure@master
+        with:
+          cli: latest
+      - name: Run tests
+        run: clojure -X:test
