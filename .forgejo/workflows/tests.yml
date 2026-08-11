@@ -43,9 +43,14 @@ jobs:
         with:
           java-version: 21
           distribution: 'temurin'
-      - name: Set up Clojure
-        uses: https://github.com/DeLaGuardo/setup-clojure@master
-        with:
-          cli: latest
+      - name: Install Clojure CLI
+        # Not setup-clojure: it calls the GitHub API with the job's
+        # GITHUB_TOKEN even for pinned versions, and on the forge that token
+        # is a Forgejo token GitHub rejects (Bad credentials). The official
+        # version-pinned installer involves no GitHub at all.
+        run: |
+          curl -sLO https://download.clojure.org/install/linux-install-1.12.4.1618.sh
+          chmod +x linux-install-1.12.4.1618.sh
+          ./linux-install-1.12.4.1618.sh
       - name: Run tests
         run: clojure -X:test

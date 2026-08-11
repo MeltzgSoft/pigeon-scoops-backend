@@ -20,10 +20,13 @@ jobs:
         with:
           java-version: 21
           distribution: 'temurin'
-      - name: Set up Clojure
-        uses: https://github.com/DeLaGuardo/setup-clojure@master
-        with:
-          cli: latest
+      - name: Install Clojure CLI
+        # See tests.yml: setup-clojure calls the GitHub API even for pinned
+        # versions; the official installer involves no GitHub at all.
+        run: |
+          curl -sLO https://download.clojure.org/install/linux-install-1.12.4.1618.sh
+          chmod +x linux-install-1.12.4.1618.sh
+          ./linux-install-1.12.4.1618.sh
       - name: Formatting
         run: clojure -M:cljfmt check
       - name: Linting
