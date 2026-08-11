@@ -1,6 +1,6 @@
 # pigeon-scoops-backend
 
-FIXME: description
+Backend service for managing my recipes, menus, and orders.
 
 ## Installation
 
