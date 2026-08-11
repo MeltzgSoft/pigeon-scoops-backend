@@ -7,24 +7,24 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  lint:
+    runs-on: linux
 
-    runs-on: ubuntu-latest
-
-    env: # Environment variable for the entire job
+    env:
       CI_ENV: true
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: Set up Java 21
-        uses: actions/setup-java@v5
+        uses: https://github.com/actions/setup-java@v5
         with:
           java-version: 21
           distribution: 'temurin'
-      - uses: DeLaGuardo/setup-clojure@master
+      - name: Set up Clojure
+        uses: https://github.com/DeLaGuardo/setup-clojure@master
         with:
           cli: latest
       - name: Formatting
-        run:  clojure -M:cljfmt check
+        run: clojure -M:cljfmt check
       - name: Linting
         run: clojure -M:clj-kondo --lint src --lint test --lint dev

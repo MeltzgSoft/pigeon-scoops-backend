@@ -121,16 +121,26 @@
      {:msg "failed to set up test system"
       :setup (when-not state/system
                (fn []
-                 (reset! postgres-container
-                         (doto (org.testcontainers.containers.PostgreSQLContainer. "postgres:latest")
-                           (.withDatabaseName "test_db")
-                           (.withUsername "user")
-                           (.withPassword "password")
-                           (.start)))
+                 ;; TEST_JDBC_URL, when set, is a complete JDBC URL (credentials
+                 ;; included) for an externally provided Postgres, and
+                 ;; testcontainers is skipped entirely. CI sets it: forge jobs
+                 ;; run in containers with no docker socket (deliberately), so
+                 ;; testcontainers cannot work there -- the database is a
+                 ;; `services:` sidecar instead, and this is the seam where it
+                 ;; is injected. Local dev keeps the zero-setup testcontainers
+                 ;; path by leaving the variable unset.
+                 (when-not (env :test-jdbc-url)
+                   (reset! postgres-container
+                           (doto (org.testcontainers.containers.PostgreSQLContainer. "postgres:latest")
+                             (.withDatabaseName "test_db")
+                             (.withUsername "user")
+                             (.withPassword "password")
+                             (.start))))
                  (let [port     (find-next-available-port (range 3000 4000))
-                       full-uri (str (.getJdbcUrl @postgres-container)
-                                     "&user=" (.getUsername @postgres-container)
-                                     "&password=" (.getPassword @postgres-container))]
+                       full-uri (or (env :test-jdbc-url)
+                                    (str (.getJdbcUrl @postgres-container)
+                                         "&user=" (.getUsername @postgres-container)
+                                         "&password=" (.getPassword @postgres-container)))]
                    (ig-repl/set-prep!
                     (fn []
                       (let [task-system (-> "resources/db-task-config.edn"
@@ -154,7 +164,8 @@
                    (ig-repl/go))))
       :teardown (fn []
                   (ig-repl/halt)
-                  (.stop @postgres-container))})))
+                  ;; nil when the database was injected via TEST_JDBC_URL
+                  (some-> @postgres-container .stop))})))
 
 (defn make-account-fixture
   ([]
