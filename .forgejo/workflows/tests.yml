@@ -28,11 +28,23 @@ jobs:
           POSTGRES_PASSWORD: password
         # Without a health check the job races Postgres's startup and the
         # first connection attempt loses.
+        #
+        # The budget is deliberately generous, because the original 10x5s=50s
+        # was marginal rather than wrong: across the four runs of this
+        # workflow, readiness took 0, 6, 6, then >10 polls, and the run that
+        # exceeded it is the one that turned the job red. The command itself
+        # is fine -- the same flags against postgres:17 go healthy in ~15s --
+        # so the variance is the runner host's I/O, not a broken check.
+        #
+        # This doubles as a diagnostic: if Postgres still fails to report
+        # healthy inside 150s, it is not slow, it is failing to start, and
+        # the next step is `docker logs` on the service container.
         options: >-
           --health-cmd "pg_isready -U user -d test_db"
           --health-interval 5s
           --health-timeout 5s
-          --health-retries 10
+          --health-start-period 60s
+          --health-retries 30
 
     steps:
       - uses: actions/checkout@v4
