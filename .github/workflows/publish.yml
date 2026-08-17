@@ -37,3 +37,32 @@ jobs:
           context: .
           push: true
           tags: vadercows/pigeon-backend:latest,vadercows/pigeon-backend:${{ env.VERSION }}
+
+  # A mirrored tag creates only a TAG here, never a Release (usb-ci FR-10.3) --
+  # something must actively create the release object, and this is it. After
+  # publish, deliberately: the Release means "shipped", so it must not exist
+  # for a version whose image never reached Docker Hub. Notes-only: Docker Hub
+  # is the artifact home, and a build attached here would be a second
+  # distribution channel to drift. No retrigger loop: creating a Release on an
+  # existing tag fires a `release` event, not a tag push, and this workflow
+  # listens only for tag pushes and dispatch -- plus GITHUB_TOKEN-initiated
+  # events never trigger workflows at all.
+  github-release:
+    needs: [publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Idempotent so a workflow_dispatch re-run doesn't fail on a Release
+        # it already made.
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release $GITHUB_REF_NAME already exists; nothing to do"
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --verify-tag --generate-notes \
+            --title "$GITHUB_REF_NAME"
