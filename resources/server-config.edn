@@ -1,11 +1,13 @@
 {:server/jetty              {:handler #ig/ref :server/routes
                              :port    3000}
  :server/routes {:jdbc-url #ig/ref :db/postgres
-                             :auth     #ig/ref :auth/auth0}
- :db/postgres               {:jdbc-url "jdbc-url"}
+                 :auth     #ig/ref :auth/auth0}
+ :db/postgres               {:jdbc-url                  "jdbc-url"
+                             :connection-max-attempts   10
+                             :connection-retry-delay-ms 3000}
  :auth/auth0                {:jwt-config               {:issuers {"https://pigeon-scoops.us.auth0.com/"
-                                                                    {:alg          :RS256
-                                                                     :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}
+                                                                  {:alg          :RS256
+                                                                   :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}
                              :test-client-id           "test-client-id"
                              :management-client-id     "client-id"
                              :management-client-secret "client-secret"}

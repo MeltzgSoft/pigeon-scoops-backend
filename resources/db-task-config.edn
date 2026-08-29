@@ -1,3 +1,5 @@
-{:db/postgres         {:jdbc-url nil}
+{:db/postgres            {:jdbc-url                  nil
+                          :connection-max-attempts   10
+                          :connection-retry-delay-ms 3000}
  :db-tasks/migration     {:jdbc-url #ig/ref :db/postgres}
  :db-tasks/accept-orders {:jdbc-url #ig/ref :db/postgres}}
