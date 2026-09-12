@@ -39,7 +39,15 @@
   :dev          {:extra-paths ["dev/src" "test"]
                  :extra-deps  {ring/ring-mock                {:mvn/version "0.6.2"}
                                integrant/repl                {:mvn/version "0.5.1"}
-                               org.testcontainers/postgresql {:mvn/version "1.21.4"}}}
+                               org.testcontainers/postgresql {:mvn/version "1.21.4"}
+                               buddy/buddy-sign                     {:mvn/version "3.6.1-359"}}}
+  :nrepl {:extra-deps {nrepl/nrepl {:mvn/version "1.0.0"}
+                       cider/cider-nrepl {:mvn/version "0.42.1"}
+                       io.julienvincent/clojure-test {:mvn/version "0.5.3"}
+                       io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
+          :main-opts  ["--main" "nrepl.cmdline"
+                       "--middleware" "[cider.nrepl/cider-middleware]"
+                       "--interactive"]}
   :cljfmt       {:extra-paths ["dev" "test"]
                  :extra-deps  {dev.weavejester/cljfmt {:mvn/version "0.16.4"}}
                  :main-opts   ["-m" "cljfmt.main"]}
