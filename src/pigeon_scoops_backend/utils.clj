@@ -16,8 +16,9 @@
                    :boolean parse-boolean
                    :uuid parse-uuid
                    identity)]
-      (or (parser value)
-          var-default))))
+      (if value
+        (parser value)
+        var-default))))
 
 (defn load-config! [config-file]
   (->> config-file
