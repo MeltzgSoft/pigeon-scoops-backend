@@ -1,6 +1,5 @@
 (ns pigeon-scoops-backend.auth
   (:require [clojure.set :as set]
-            [environ.core :refer [env]]
             [clj-http.client :as http]
             [integrant.core :as ig]
             [muuntaja.core :as m]))
@@ -11,12 +10,6 @@
              :manage-orders
              :manage-menus
              :manage-production})
-
-(defmethod ig/expand-key :auth/auth0 [k config]
-  {k (merge config (cond-> {}
-                     (env :test-client-id) (conj {:test-client-id (env :test-client-id)})
-                     (env :management-client-id) (conj {:management-client-id (env :management-client-id)})
-                     (env :management-client-secret) (conj {:management-client-secret (env :management-client-secret)})))})
 
 (defmethod ig/init-key :auth/auth0 [_ config]
   config)

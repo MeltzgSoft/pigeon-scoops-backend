@@ -172,8 +172,8 @@
                                                                                                                           (:amount_unit %))
                                                                                                     :source      ""})
                                                                                             (fn [k] (keyword "recipe" (name k))))})
-                                                          :body
-                                                          :id)]
+                                                         :body
+                                                         :id)]
                                        (make-request! :post (str "/v1/recipes/" recipe-id "/ingredients")
                                                       {:auth true
                                                        :body (update-keys {:ingredient-recipe-id (get recipe-map (:recipe_id %))
@@ -324,8 +324,7 @@
      (migration-task)
      (ig/halt! task-system))
    (-> "dev/resources/server-config.edn"
-       slurp
-       ig/read-string
+       (load-config!)
        (update-in [:db/postgres :jdbc-url] #(if (nil? %)
                                               (str (.getJdbcUrl @db-container)
                                                    "&user=" (.getUsername @db-container)

@@ -17,3 +17,4 @@ dev/resources/db.sqlite
 dev/resources/*-users.edn
 .clj-kondo/.cache/
 .cpcache/
+.envrc

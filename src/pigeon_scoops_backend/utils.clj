@@ -1,13 +1,28 @@
 (ns pigeon-scoops-backend.utils
-  (:require [integrant.core :as ig]
+  (:require [environ.core :refer [env]]
+            [integrant.core :as ig]
             [next.jdbc :as jdbc]
             [pigeon-scoops-backend.units.common :as common])
   (:import (java.time Duration)))
 
+(defn read-env! [form]
+  (if (keyword? form)
+    (env form)
+    (let [[var-type var-name] form
+          value (env var-name)
+          parser (case var-type
+                   :int parse-long
+                   :double parse-double
+                   :boolean parse-boolean
+                   :uuid parse-uuid
+                   identity)]
+      (parser value))))
+
 (defn load-config! [config-file]
-  (-> config-file
-      (slurp)
-      (ig/read-string)))
+  (->> config-file
+       (slurp)
+       (ig/read-string
+        {:readers {'env read-env!}})))
 
 (defn init-system! [config]
   (-> config

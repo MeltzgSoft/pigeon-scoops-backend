@@ -1,7 +1,6 @@
 (ns pigeon-scoops-backend.server
   (:gen-class)
   (:require [clojure.tools.logging :as log]
-            [environ.core :refer [env]]
             [integrant.core :as ig]
             [pigeon-scoops-backend.utils :refer [load-config! init-system!]]
             [pigeon-scoops-backend.router :as router]
@@ -9,10 +8,6 @@
             [pigeon-scoops-backend.db]
             [pigeon-scoops-backend.db-tasks])
   (:import (org.eclipse.jetty.server Server)))
-
-(defmethod ig/expand-key :server/jetty [k config]
-  {k (merge config (when-some [port (env :port)]
-                     {:port (Integer/parseInt port)}))})
 
 (defmethod ig/init-key :server/jetty [_ {:keys [handler port]}]
   (log/info "Server running on port" port)

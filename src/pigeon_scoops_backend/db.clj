@@ -1,16 +1,11 @@
 (ns pigeon-scoops-backend.db
   (:require [clojure.tools.logging :as log]
-            [environ.core :refer [env]]
             [integrant.core :as ig]
             [next.jdbc :as jdbc]
             [next.jdbc.connection :as njc]
             [next.jdbc.result-set :as rs])
   (:import (com.zaxxer.hikari HikariDataSource)
            (java.sql Array)))
-
-(defmethod ig/expand-key :db/postgres [k config]
-  {k (merge config (when-some [jdbc-url (env :jdbc-database-url)]
-                     {:jdbc-url jdbc-url}))})
 
 (defn retry! [operation {:keys [max-attempts delay-ms sleep-fn]
                          :or   {sleep-fn #(Thread/sleep %)}}]
