@@ -18,3 +18,5 @@ dev/resources/*-users.edn
 .clj-kondo/.cache/
 .cpcache/
 .envrc
+.lsp/
+nvim.log
