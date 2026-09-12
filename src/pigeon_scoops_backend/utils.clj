@@ -8,7 +8,7 @@
 (defn read-env! [form]
   (if (keyword? form)
     (env form)
-    (let [[var-type var-name] form
+    (let [[var-type var-name var-default] form
           value (env var-name)
           parser (case var-type
                    :int parse-long
@@ -16,7 +16,8 @@
                    :boolean parse-boolean
                    :uuid parse-uuid
                    identity)]
-      (parser value))))
+      (or (parser value)
+          var-default))))
 
 (defn load-config! [config-file]
   (->> config-file

@@ -1,5 +1,5 @@
 {:server/jetty              {:handler #ig/ref :server/routes
-                             :port    #env [:int :port]}
+                             :port    #env [:int :port 8080]}
  :server/routes {:jdbc-url #ig/ref :db/postgres
                  :auth     #ig/ref :auth/auth0}
  :db/postgres               {:jdbc-url                  #env :jdbc-database-url
