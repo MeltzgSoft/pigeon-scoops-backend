@@ -20,3 +20,4 @@ dev/resources/*-users.edn
 .envrc
 .lsp/
 nvim.log
+token.txt

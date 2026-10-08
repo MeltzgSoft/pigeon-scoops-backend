@@ -28,7 +28,7 @@ jobs:
             || { echo "::error::run this from a v#.#.# tag ref, not '$GITHUB_REF_NAME'"; exit 1; }
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Version from tag
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
       - name: Login to Docker Hub
