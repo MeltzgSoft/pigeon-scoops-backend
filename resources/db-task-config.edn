@@ -1,4 +1,4 @@
-{:db/postgres            {:jdbc-url                  nil
+{:db/postgres            {:jdbc-url                  #env :jdbc-database-url
                           :connection-max-attempts   10
                           :connection-retry-delay-ms 3000}
  :db-tasks/migration     {:jdbc-url #ig/ref :db/postgres}
