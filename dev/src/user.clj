@@ -359,6 +359,17 @@
   (.getJdbcUrl (:connectable (:db/postgres state/system)))
   (make-test-users! 2)
   (order-db/find-all-orders! (:db/postgres state/system) nil true)
+  (map
+   (fn [[k v]]
+     (->> (make-request! :get (str "/v1/" v) {:auth true})
+          :body
+          (map (keyword (name k) "id"))
+          (map #(make-request! :get (str "/v1/" v "/" %) {:auth true}))
+          (map :body)
+          (vector k)))
+   {:recipe "recipes"
+    :grocery "groceries"
+    :order "orders"})
   (go!)
   (go! false)
   (pprint @tokens)
