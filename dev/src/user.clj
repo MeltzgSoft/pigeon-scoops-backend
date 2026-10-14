@@ -302,35 +302,33 @@
 
 (ig-repl/set-prep!
  (fn []
-   (when-not @db-container
-     (println "resetting db")
-     (reset! db-container (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
-                            (.withDatabaseName "test_db")
-                            (.withUsername "user")
-                            (.withPassword "password")
-                            (.start))))
-   (let [task-system (-> "resources/db-task-config.edn"
+   (let [base-config (load-config! "resources/server-config.edn")
+         _ (pprint base-config)
+         jdbc-url (or (-> base-config :db/postgres :jdbc-url)
+                      (do
+                        (when (nil? @db-container)
+                          (println "resetting db")
+                          (reset! db-container (doto (PostgreSQLContainer. "postgres:latest")
+                                                 (.withDatabaseName "test_db")
+                                                 (.withUsername "user")
+                                                 (.withPassword "password")
+                                                 (.start))))
+                        (str (.getJdbcUrl @db-container)
+                             "&user=" (.getUsername @db-container)
+                             "&password=" (.getPassword @db-container))))
+         task-system (-> "resources/db-task-config.edn"
                          (load-config!)
-                         (update-in [:db/postgres :jdbc-url] #(if (nil? %)
-                                                                (str (.getJdbcUrl @db-container)
-                                                                     "&user=" (.getUsername @db-container)
-                                                                     "&password=" (.getPassword @db-container))
-                                                                %))
+                         (assoc-in [:db/postgres :jdbc-url] jdbc-url)
                          (init-system!))
          migration-task (:db-tasks/migration task-system)]
      (println "JDBC-URI:" (str (.getJdbcUrl @db-container)
                                "&user=" (.getUsername @db-container)
                                "&password=" (.getPassword @db-container)))
      (migration-task)
-     (ig/halt! task-system))
-   (-> "dev/resources/server-config.edn"
-       (load-config!)
-       (update-in [:db/postgres :jdbc-url] #(if (nil? %)
-                                              (str (.getJdbcUrl @db-container)
-                                                   "&user=" (.getUsername @db-container)
-                                                   "&password=" (.getPassword @db-container))
-                                              %))
-       (ig/expand))))
+     (ig/halt! task-system)
+     (-> base-config
+         (assoc-in [:db/postgres :jdbc-url] jdbc-url)
+         (ig/expand)))))
 
 (defn go!
   ([]
