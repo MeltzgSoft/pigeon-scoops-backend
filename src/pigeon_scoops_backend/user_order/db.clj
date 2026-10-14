@@ -60,10 +60,11 @@
                        db
                        :user-order
                        (cond-> {:user-order/deleted false}
-                         user-id (assoc :user-order/user-id user-id)))
-               order-items (->> orders
-                                (map :user-order/id)
-                                (apply (partial find-all-order-items! db)))]
+                         (not= user-id :admin) (assoc :user-order/user-id user-id)))
+               order-items (when (seq orders)
+                             (->> orders
+                                  (map :user-order/id)
+                                  (apply (partial find-all-order-items! db))))]
            (->> orders
                 (mapv #(assoc % :user-order/status (infer-order-status (get order-items (:user-order/id %)))
                               :user-order/items (when detailed?

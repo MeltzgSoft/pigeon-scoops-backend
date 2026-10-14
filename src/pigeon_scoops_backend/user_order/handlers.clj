@@ -16,8 +16,9 @@
   (fn [request]
     (let [production-manager? (production-manager? request)
           {admin-request? :admin detailed? :detailed} (-> request :parameters :query)
-          uid (when-not (and admin-request?
-                             production-manager?)
+          uid (if (and admin-request?
+                       production-manager?)
+                :admin
                 (-> request :claims :sub))]
       (rr/response (vec (order-db/find-all-orders! db uid detailed?))))))
 

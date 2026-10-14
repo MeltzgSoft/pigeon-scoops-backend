@@ -83,6 +83,11 @@
         (is (pos? (count body)))
         (is ((set (map :user-order/id body)) admin-order-id))
         (is ((set (map :user-order/id body)) other-order-id))))
+    (testing "List orders. non authenticated users cannot get orders from all users"
+      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? false})
+            body (map #(update % :user-order/id parse-uuid) body)]
+        (is (= 200 status))
+        (is (zero? (count body)))))
     (testing "List orders. non admins cannot get orders from all users"
       (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :use-other-user true :params {:admin true}})
             body (map #(update % :user-order/id parse-uuid) body)]
