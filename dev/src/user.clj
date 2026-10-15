@@ -113,10 +113,30 @@
       (update :grocery
               (fn [groceries]
                 (->> groceries
-                     (map #(vector (:grocery/id %)
-                                   (-> (make-request! :post "/v1/groceries" {:auth true :body %})
-                                       :body
-                                       :id))))))))
+                     (map (fn [grocery]
+                            (let [old-id (:grocery/id grocery)
+                                  new-id (-> (make-request! :post "/v1/groceries" {:auth true :body grocery})
+                                             :body
+                                             :id)]
+                              [old-id {:old-id old-id
+                                       :new-id new-id
+                                       :grocery-unit (->> grocery
+                                                          :grocery/units
+                                                          (map #(-> (make-request! :post (str "/v1/groceries/" new-id "/units") {:auth true :body %})
+                                                                    :body
+                                                                    :id
+                                                                    (vector (:grocery-unit/id %))))
+                                                          (into {}))}])))
+                     (into {}))))
+      (update :recipe
+              (fn [recipes]
+                (->> recipes
+                     (map #(->> (make-request! :post "/v1/recipes" {:auth true :body %})
+                                :body
+                                :id
+                                (hash-map :old-id (:recipe/id %) :new-id)
+                                (vector (:recipe/id %))))
+                     (into {}))))))
 
 (defn init-app! []
   (if (.exists (io/file users-config))
@@ -203,7 +223,7 @@
 
   (go!)
   (go! false)
-  (pprint @tokens)
+  @tokens
   (halt!)
   (ig-reset!)
   (ig-reset-all!))
