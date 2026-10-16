@@ -106,18 +106,29 @@
       (recur (make-request! :post "/v1/account" {:auth true})
              (inc attempts)))))
 
+(comment
+  (load-seed-data!))
+
+(defn load-entities!
+  ([entities entity-key route]
+   (load-entities! entities entity-key route nil))
+  ([entities entity-key route subentity-key]
+   (->> entities
+        (map (fn [entity]
+               (->> (make-request! :post
+                                   (str "/v1/" route)
+                                   {:auth true :body entity})
+                    :body
+                    :id
+                    (hash-map :old-id ((keyword (name entity-key) "id") entity) :new-id)
+                    (#(if subentity-key (assoc % subentity-key (subentity-key entity)) %))
+                    (vector ((keyword (name entity-key) "id") entity)))))
+        (into {}))))
+
 (defn load-seed-data! []
   (let [seed-map (reduce
                   (fn [acc [entity-key route subentity-key]]
-                    (update acc entity-key
-                            (fn [entities]
-                              (->> entities
-                                   (map #(->> (make-request! :post (str "/v1/" route) {:auth true :body %})
-                                              :body
-                                              :id
-                                              (hash-map :old-id ((keyword (name entity-key) "id") %) subentity-key (subentity-key %) :new-id)
-                                              (vector ((keyword (name entity-key) "id") %))))
-                                   (into {})))))
+                    (update acc entity-key load-entities! entity-key route subentity-key))
                   (-> "dev/resources/seed.edn"
                       (slurp)
                       (edn/read-string))
@@ -125,7 +136,35 @@
                    [:recipe "recipes" :recipe/ingredients]
                    [:menu "menus" :menu/items]
                    [:user-order "orders" :user-order/items]])]
-    seed-map))
+    (-> seed-map
+        (update
+         :grocery
+         (fn [groceries]
+           (update-vals
+            groceries
+            (fn [grocery]
+              (update grocery :grocery/units load-entities! :grocery-unit (str "groceries/" (:new-id grocery) "/units"))))))
+        (update
+         :recipe
+         (fn [recipes]
+           (update-vals
+            recipes
+            (fn [recipe]
+              (-> recipe
+                  (update :recipe/ingredients
+                          (fn [ingredients]
+                            (load-entities!
+                             (map (fn [ingredient]
+                                    (cond-> ingredient
+                                      (:ingredient/ingredient-grocery-id ingredient)
+                                      (update :ingredient/ingredient-grocery-id #(get-in seed-map [:grocery % :new-id]))
+                                      (:ingredient/ingredient-recipe-id ingredient)
+                                      (update :ingredient/ingredient-recipe-id #(get-in seed-map [:recipe % :new-id]))))
+                                  ingredients)
+                             :ingredient
+                             (str "recipes/" (:new-id recipe) "/ingredients")))))))))
+
+        :recipe)))
 
 (defn init-app! []
   (if (.exists (io/file users-config))
@@ -207,11 +246,16 @@
      {:recipe "recipes"
       :grocery "groceries"
       :user-order "orders"})))
-  (-> "dev/resources/dev.edn"
+  (-> "dev/resources/seed.edn"
       (slurp))
 
   (go!)
+  (->> "dev/resources/seed.edn"
+       (slurp)
+       (edn/read-string))
+
   (go! false)
+
   @tokens
   (halt!)
   (ig-reset!)
