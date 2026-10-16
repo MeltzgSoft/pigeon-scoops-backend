@@ -175,9 +175,15 @@
             (fn [order]
               (update order
                       :user-order/items
-                      load-entities!
-                      :order-item
-                      (str "orders/" (:new-id order) "/items"))))))
+                      (fn [order-items]
+                        (load-entities!
+                         (map (fn [order-item]
+                                (cond-> order-item
+                                  (:order-item/recipe-id order-item)
+                                  (update :order-item/recipe-id #(get-in seed-map [:recipe % :new-id]))))
+                              order-items)
+                         :order-item
+                         (str "orders/" (:new-id order) "/items"))))))))
         :user-order)))
 
 (defn init-app! []
