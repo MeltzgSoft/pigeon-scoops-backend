@@ -143,28 +143,42 @@
            (update-vals
             groceries
             (fn [grocery]
-              (update grocery :grocery/units load-entities! :grocery-unit (str "groceries/" (:new-id grocery) "/units"))))))
+              (update grocery
+                      :grocery/units
+                      load-entities!
+                      :grocery-unit
+                      (str "groceries/" (:new-id grocery) "/units"))))))
         (update
          :recipe
          (fn [recipes]
            (update-vals
             recipes
             (fn [recipe]
-              (-> recipe
-                  (update :recipe/ingredients
-                          (fn [ingredients]
-                            (load-entities!
-                             (map (fn [ingredient]
-                                    (cond-> ingredient
-                                      (:ingredient/ingredient-grocery-id ingredient)
-                                      (update :ingredient/ingredient-grocery-id #(get-in seed-map [:grocery % :new-id]))
-                                      (:ingredient/ingredient-recipe-id ingredient)
-                                      (update :ingredient/ingredient-recipe-id #(get-in seed-map [:recipe % :new-id]))))
-                                  ingredients)
-                             :ingredient
-                             (str "recipes/" (:new-id recipe) "/ingredients")))))))))
-
-        :recipe)))
+              (update recipe
+                      :recipe/ingredients
+                      (fn [ingredients]
+                        (load-entities!
+                         (map (fn [ingredient]
+                                (cond-> ingredient
+                                  (:ingredient/ingredient-grocery-id ingredient)
+                                  (update :ingredient/ingredient-grocery-id #(get-in seed-map [:grocery % :new-id]))
+                                  (:ingredient/ingredient-recipe-id ingredient)
+                                  (update :ingredient/ingredient-recipe-id #(get-in seed-map [:recipe % :new-id]))))
+                              ingredients)
+                         :ingredient
+                         (str "recipes/" (:new-id recipe) "/ingredients"))))))))
+        (update
+         :user-order
+         (fn [orders]
+           (update-vals
+            orders
+            (fn [order]
+              (update order
+                      :user-order/items
+                      load-entities!
+                      :order-item
+                      (str "orders/" (:new-id order) "/items"))))))
+        :user-order)))
 
 (defn init-app! []
   (if (.exists (io/file users-config))
