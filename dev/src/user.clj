@@ -107,36 +107,25 @@
              (inc attempts)))))
 
 (defn load-seed-data! []
-  (-> "dev/resources/seed.edn"
-      (slurp)
-      (edn/read-string)
-      (update :grocery
-              (fn [groceries]
-                (->> groceries
-                     (map (fn [grocery]
-                            (let [old-id (:grocery/id grocery)
-                                  new-id (-> (make-request! :post "/v1/groceries" {:auth true :body grocery})
-                                             :body
-                                             :id)]
-                              [old-id {:old-id old-id
-                                       :new-id new-id
-                                       :grocery-unit (->> grocery
-                                                          :grocery/units
-                                                          (map #(-> (make-request! :post (str "/v1/groceries/" new-id "/units") {:auth true :body %})
-                                                                    :body
-                                                                    :id
-                                                                    (vector (:grocery-unit/id %))))
-                                                          (into {}))}])))
-                     (into {}))))
-      (update :recipe
-              (fn [recipes]
-                (->> recipes
-                     (map #(->> (make-request! :post "/v1/recipes" {:auth true :body %})
-                                :body
-                                :id
-                                (hash-map :old-id (:recipe/id %) :new-id)
-                                (vector (:recipe/id %))))
-                     (into {}))))))
+  (let [seed-map (reduce
+                  (fn [acc [entity-key route subentity-key]]
+                    (update acc entity-key
+                            (fn [entities]
+                              (->> entities
+                                   (map #(->> (make-request! :post (str "/v1/" route) {:auth true :body %})
+                                              :body
+                                              :id
+                                              (hash-map :old-id ((keyword (name entity-key) "id") %) subentity-key (subentity-key %) :new-id)
+                                              (vector ((keyword (name entity-key) "id") %))))
+                                   (into {})))))
+                  (-> "dev/resources/seed.edn"
+                      (slurp)
+                      (edn/read-string))
+                  [[:grocery "groceries" :grocery/units]
+                   [:recipe "recipes" :recipe/ingredients]
+                   [:menu "menus" :menu/items]
+                   [:user-order "orders" :user-order/items]])]
+    seed-map))
 
 (defn init-app! []
   (if (.exists (io/file users-config))
