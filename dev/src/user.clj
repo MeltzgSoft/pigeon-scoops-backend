@@ -168,6 +168,29 @@
                          :ingredient
                          (str "recipes/" (:new-id recipe) "/ingredients"))))))))
         (update
+         :menu
+         (fn [menus]
+           (update-vals
+            menus
+            (fn [menu]
+              (update menu
+                      :menu/items
+                      (fn [menu-items]
+                        (let [item-map (load-entities!
+                                        (map (fn [menu-item]
+                                               (update menu-item :menu-item/recipe-id
+                                                       #(get-in seed-map [:recipe % :new-id])))
+                                             menu-items)
+                                        :menu-item
+                                        (str "menus/" (:new-id menu) "/items")
+                                        :menu-item/sizes)]
+                          (update-vals
+                           item-map
+                           (fn [menu-item]
+                             (update menu-item :menu-item/sizes
+                                     load-entities! :menu-item-size (str "menus/" (:new-id menu) "/items/" (:new-id menu-item) "/sizes")))))))))))
+
+        (update
          :user-order
          (fn [orders]
            (update-vals
@@ -178,7 +201,6 @@
                       (fn [order-items]
                         (load-entities!
                          (map (fn [order-item]
-                                (pprint order-item)
                                 (cond-> order-item
                                   (:order-item/recipe-id order-item)
                                   (update :order-item/recipe-id #(get-in seed-map [:recipe % :new-id]))
@@ -194,8 +216,7 @@
                                                                             :new-id))))
                               order-items)
                          :order-item
-                         (str "orders/" (:new-id order) "/items"))))))))
-        :menu)))
+                         (str "orders/" (:new-id order) "/items")))))))))))
 
 (defn init-app! []
   (if (.exists (io/file users-config))
@@ -252,41 +273,25 @@
   (map #(auth0/delete-user! (:auth/auth0 state/system) (:user_id %))
        (filter #(str/starts-with? (:email %) "integration-test")
                (auth0/get-users! (:auth/auth0 state/system))))
-  (-> (make-request! :get "/v1/orders?detailed=true&admin=true"
-                     {:auth true})
-      :body
-      (first)
-      :user-order/id
-      (#(make-request! :get (str "/v1/orders/" %)
-                       {:auth true})))
-  (.getJdbcUrl (:connectable (:db/postgres state/system)))
-  (make-test-users! 2)
-  (order-db/find-all-orders! (:db/postgres state/system) nil true)
   (spit
    "dev/resources/seed.edn"
-   (into
-    {}
-    (map
-     (fn [[k v]]
-       (->> (make-request! :get (str "/v1/" v) {:auth true})
-            :body
-            (map (keyword (name k) "id"))
-            (map #(make-request! :get (str "/v1/" v "/" %) {:auth true}))
-            (map :body)
-            (vector k)))
-     {:recipe "recipes"
-      :grocery "groceries"
-      :user-order "orders"})))
-  (-> "dev/resources/seed.edn"
-      (slurp))
-
+   (with-out-str
+     (pprint
+      (into
+       {}
+       (map
+        (fn [[k v]]
+          (->> (make-request! :get (str "/v1/" v) {:auth true})
+               :body
+               (map (keyword (name k) "id"))
+               (map #(make-request! :get (str "/v1/" v "/" %) {:auth true}))
+               (map :body)
+               (vector k)))
+        {:recipe "recipes"
+         :grocery "groceries"
+         :user-order "orders"})))))
   (go!)
-  (->> "dev/resources/seed.edn"
-       (slurp)
-       (edn/read-string))
-
   (go! false)
-
   @tokens
   (halt!)
   (ig-reset!)
