@@ -9,7 +9,6 @@
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.utils :refer [init-system! load-config!]]
-            [pigeon-scoops-backend.user-order.db :as order-db]
             [ring.mock.request :as mock]
             [clojure.pprint :refer [pprint]]
             [pigeon-scoops-backend.db]
