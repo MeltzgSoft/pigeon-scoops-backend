@@ -106,9 +106,6 @@
       (recur (make-request! :post "/v1/account" {:auth true})
              (inc attempts)))))
 
-(comment
-  (load-seed-data!))
-
 (defn load-entities!
   ([entities entity-key route]
    (load-entities! entities entity-key route nil))
