@@ -1,12 +1,12 @@
-(ns pigeon-scoops-backend.util-api.responses
+(ns pigeon-scoops-backend.util-api.schema
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.auth :refer [roles]]
-            [pigeon-scoops-backend.grocery.responses :refer [departments]]
-            [pigeon-scoops-backend.menu.responses :refer [durations]]
+            [pigeon-scoops-backend.grocery.schema :refer [departments]]
+            [pigeon-scoops-backend.menu.schema :refer [durations]]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
             [pigeon-scoops-backend.units.volume :as volume]
-            [pigeon-scoops-backend.user-order.responses :refer [status]]))
+            [pigeon-scoops-backend.user-order.schema :refer [status]]))
 
 (def constants
   {:constants/unit-types     [(s/and keyword?

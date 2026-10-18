@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.grocery.responses
+(ns pigeon-scoops-backend.grocery.schema
   (:require [spec-tools.data-spec :as ds]))
 
 (def departments

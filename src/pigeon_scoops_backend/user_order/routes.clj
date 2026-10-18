@@ -1,13 +1,13 @@
 (ns pigeon-scoops-backend.user-order.routes
   (:require [clojure.spec.alpha :as s]
-            [pigeon-scoops-backend.grocery.responses :as grocery-responses]
+            [pigeon-scoops-backend.grocery.schema :as grocery-responses]
             [pigeon-scoops-backend.middleware :as mw]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
             [pigeon-scoops-backend.units.volume :as volume]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.user-order.handlers :as order]
-            [pigeon-scoops-backend.user-order.responses :as responses]
+            [pigeon-scoops-backend.user-order.schema :as responses]
             [pigeon-scoops-backend.utils :refer [production-manager?]]
             [spec-tools.data-spec :as ds]))
 

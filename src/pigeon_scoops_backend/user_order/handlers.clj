@@ -7,7 +7,7 @@
             [pigeon-scoops-backend.responses :as responses]
             [pigeon-scoops-backend.units.common :as units]
             [pigeon-scoops-backend.user-order.db :as order-db]
-            [pigeon-scoops-backend.user-order.responses :refer [terminal?]]
+            [pigeon-scoops-backend.user-order.schema :refer [terminal?]]
             [pigeon-scoops-backend.utils :refer [with-connection! production-manager? combine-amounts]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))

@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.user-order.responses
+(ns pigeon-scoops-backend.user-order.schema
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]

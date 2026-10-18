@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.menu.responses
+(ns pigeon-scoops-backend.menu.schema
   (:require [spec-tools.data-spec :as ds]))
 
 (def durations

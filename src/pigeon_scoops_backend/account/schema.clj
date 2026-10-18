@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.account.responses
+(ns pigeon-scoops-backend.account.schema
   (:require
    [clojure.spec.alpha :as s]
    [pigeon-scoops-backend.auth :refer [roles]]))

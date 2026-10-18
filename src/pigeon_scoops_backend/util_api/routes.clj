@@ -1,6 +1,6 @@
 (ns pigeon-scoops-backend.util-api.routes
   (:require [pigeon-scoops-backend.util-api.handlers :as util-api]
-            [pigeon-scoops-backend.util-api.responses :as responses]))
+            [pigeon-scoops-backend.util-api.schema :as responses]))
 
 (defn routes []
   ["" {:openapi    {:tags ["utilities"]}}

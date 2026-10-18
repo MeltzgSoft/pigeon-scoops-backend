@@ -1,11 +1,11 @@
 (ns pigeon-scoops-backend.util-api.handlers
   (:require [pigeon-scoops-backend.auth :refer [roles]]
-            [pigeon-scoops-backend.grocery.responses :refer [departments]]
-            [pigeon-scoops-backend.menu.responses :refer [durations]]
+            [pigeon-scoops-backend.grocery.schema :refer [departments]]
+            [pigeon-scoops-backend.menu.schema :refer [durations]]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
             [pigeon-scoops-backend.units.volume :as volume]
-            [pigeon-scoops-backend.user-order.responses :refer [status]]
+            [pigeon-scoops-backend.user-order.schema :refer [status]]
             [ring.util.response :as rr]))
 
 (defn get-constants []

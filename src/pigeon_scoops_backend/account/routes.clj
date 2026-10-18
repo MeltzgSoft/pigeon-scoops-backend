@@ -1,6 +1,6 @@
 (ns pigeon-scoops-backend.account.routes
   (:require [clojure.spec.alpha :as s]
-            [pigeon-scoops-backend.account.responses :as responses]
+            [pigeon-scoops-backend.account.schema :as responses]
             [pigeon-scoops-backend.account.handlers :as account]
             [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.middleware :as mw]))

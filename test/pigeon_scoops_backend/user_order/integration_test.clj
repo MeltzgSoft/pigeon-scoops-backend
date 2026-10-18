@@ -3,7 +3,7 @@
             [integrant.repl.state :as state]
             [pigeon-scoops-backend.test-system :as ts]
             [pigeon-scoops-backend.user-order.db :as order-db]
-            [pigeon-scoops-backend.user-order.responses :refer [status terminal?]]))
+            [pigeon-scoops-backend.user-order.schema :refer [status terminal?]]))
 
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture [:manage-recipes :manage-orders :manage-menus :manage-production] [:manage-recipes :manage-orders :manage-menus]))
 

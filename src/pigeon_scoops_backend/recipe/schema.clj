@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.recipe.responses
+(ns pigeon-scoops-backend.recipe.schema
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]

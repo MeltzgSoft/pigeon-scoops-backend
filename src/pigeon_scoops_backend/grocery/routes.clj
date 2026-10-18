@@ -1,7 +1,7 @@
 (ns pigeon-scoops-backend.grocery.routes
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.grocery.handlers :as grocery]
-            [pigeon-scoops-backend.grocery.responses :as responses]
+            [pigeon-scoops-backend.grocery.schema :as responses]
             [pigeon-scoops-backend.middleware :as mw]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]

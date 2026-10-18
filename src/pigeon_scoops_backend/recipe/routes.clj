@@ -1,9 +1,9 @@
 (ns pigeon-scoops-backend.recipe.routes
   (:require [clojure.spec.alpha :as s]
-            [pigeon-scoops-backend.grocery.responses :as grocery-responses]
+            [pigeon-scoops-backend.grocery.schema :as grocery-responses]
             [pigeon-scoops-backend.middleware :as mw]
             [pigeon-scoops-backend.recipe.handlers :as recipe]
-            [pigeon-scoops-backend.recipe.responses :as responses]
+            [pigeon-scoops-backend.recipe.schema :as responses]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
             [pigeon-scoops-backend.units.volume :as volume]

@@ -1,6 +1,6 @@
 (ns pigeon-scoops-backend.user-order.responses-test
   (:require [clojure.test :refer [deftest is testing]]
-            [pigeon-scoops-backend.user-order.responses :refer [terminal?]]))
+            [pigeon-scoops-backend.user-order.schema :refer [terminal?]]))
 
 (deftest terminal?-test
   (testing "terminal statuses"

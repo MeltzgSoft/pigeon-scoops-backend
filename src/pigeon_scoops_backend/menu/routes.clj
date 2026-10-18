@@ -1,7 +1,7 @@
 (ns pigeon-scoops-backend.menu.routes
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.menu.handlers :as menu]
-            [pigeon-scoops-backend.menu.responses :as responses]
+            [pigeon-scoops-backend.menu.schema :as responses]
             [pigeon-scoops-backend.middleware :as mw]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
