@@ -12,12 +12,12 @@
   (with-connection!
     db
     (fn [db]
-      (let [menu-ids (conj menu-ids menu-id)
-            menu-items (sql/query db
-                                  (-> (h/select :*)
-                                      (h/from :menu-item)
-                                      (h/where [:in :menu-id menu-ids])
-                                      (hsql/format)))
+      (let [menu-ids        (conj menu-ids menu-id)
+            menu-items      (sql/query db
+                                       (-> (h/select :*)
+                                           (h/from :menu-item)
+                                           (h/where [:in :menu-id menu-ids])
+                                           (hsql/format)))
             menu-item-sizes (when (seq menu-items)
                               (->> (-> (h/select :*)
                                        (h/from :menu-item-size)
@@ -48,15 +48,15 @@
    (with-connection!
      db
      (fn [db]
-       (let [menus (->> (sql/find-by-keys
-                         db
-                         :menu
-                         (if (and include-inactive? include-deleted?)
-                           :all
-                           (cond-> {}
-                             (not include-inactive?) (assoc :active true)
-                             (not include-deleted?) (assoc :deleted false))))
-                        (map #(apply-db-str->keyword % :menu/duration-type)))
+       (let [menus      (->> (sql/find-by-keys
+                              db
+                              :menu
+                              (if (and include-inactive? include-deleted?)
+                                :all
+                                (cond-> {}
+                                  (not include-inactive?) (assoc :active true)
+                                  (not include-deleted?) (assoc :deleted false))))
+                             (map #(apply-db-str->keyword % :menu/duration-type)))
              menu-items (when (and detailed? (seq menus))
                           (->> menus
                                (map :menu/id)

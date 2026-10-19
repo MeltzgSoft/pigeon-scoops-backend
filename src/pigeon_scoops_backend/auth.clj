@@ -4,12 +4,12 @@
             [integrant.core :as ig]
             [muuntaja.core :as m]))
 
-(def roles #{:manage-roles
-             :manage-recipes
-             :manage-groceries
-             :manage-orders
-             :manage-menus
-             :manage-production})
+(def roles [:manage-roles
+            :manage-recipes
+            :manage-groceries
+            :manage-orders
+            :manage-menus
+            :manage-production])
 
 (defmethod ig/init-key :auth/auth0 [_ config]
   config)
@@ -70,9 +70,9 @@
           roles (get-roles! token)]
       (->> roles
            (map #(vector (-> % :name keyword)
-                         (->> {:headers {"Authorization" (str "Bearer " token)}
+                         (->> {:headers       {"Authorization" (str "Bearer " token)}
                                :cookie-policy :standard
-                               :content-type :json}
+                               :content-type  :json}
                               (http/get (str "https://pigeon-scoops.us.auth0.com/api/v2/roles/" (:id %) "/users"))
                               (m/decode-response-body)
                               (map :user_id))))
@@ -81,17 +81,17 @@
 (defn update-roles! [{:keys [update-roles-fn] :as auth} uid roles]
   (if update-roles-fn
     (update-roles-fn uid roles)
-    (let [token (get-management-token! auth)
-          current-roles (->> {:headers {"Authorization" (str "Bearer " token)}
+    (let [token         (get-management-token! auth)
+          current-roles (->> {:headers       {"Authorization" (str "Bearer " token)}
                               :cookie-policy :standard
-                              :content-type :json}
+                              :content-type  :json}
                              (http/get (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid "/roles"))
                              (m/decode-response-body)
                              (map (comp keyword :name)))
-          to-delete (set/difference (set current-roles)
-                                    (set roles))
-          to-add (set/difference (set roles)
-                                 (set current-roles))]
+          to-delete     (set/difference (set current-roles)
+                                        (set roles))
+          to-add        (set/difference (set roles)
+                                        (set current-roles))]
       (every? true? (map (fn [[method roles]]
                            (if (seq roles)
                              (->> {:headers          {"Authorization" (str "Bearer " token)}
@@ -105,4 +105,4 @@
                                   (= 204))
                              true))
                          {http/delete to-delete
-                          http/post to-add})))))
+                          http/post   to-add})))))

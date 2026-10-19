@@ -9,13 +9,13 @@
   (if (keyword? form)
     (env form)
     (let [[var-type var-name var-default] form
-          value (env var-name)
-          parser (case var-type
-                   :int parse-long
-                   :double parse-double
-                   :boolean parse-boolean
-                   :uuid parse-uuid
-                   identity)]
+          value                           (env var-name)
+          parser                          (case var-type
+                                            :int parse-long
+                                            :double parse-double
+                                            :boolean parse-boolean
+                                            :uuid parse-uuid
+                                            identity)]
       (if value
         (parser value)
         var-default))))

@@ -17,20 +17,20 @@
 (defn create-recipe! [db]
   (fn [request]
     (let [recipe-id (UUID/randomUUID)
-          recipe (-> request :parameters :body)]
+          recipe    (-> request :parameters :body)]
       (recipe-db/insert-recipe! db (assoc recipe :id recipe-id))
       (rr/created (str responses/base-url "/recipes/" recipe-id)
                   {:id recipe-id}))))
 
 (defn retrieve-recipe! [db]
   (fn [request]
-    (let [recipe-id (-> request :parameters :path :recipe-id)
+    (let [recipe-id                    (-> request :parameters :path :recipe-id)
           {:keys [amount amount-unit]} (-> request
                                            :parameters
                                            :query)
-          recipe (transforms/anonymize-mystery-recipe
-                  (recipe-db/find-recipe-by-id! db recipe-id))
-          scaled-recipe (transforms/scale-recipe recipe amount amount-unit)]
+          recipe                       (transforms/anonymize-mystery-recipe
+                                        (recipe-db/find-recipe-by-id! db recipe-id))
+          scaled-recipe                (transforms/scale-recipe recipe amount amount-unit)]
       (cond (not= (nil? amount) (nil? amount-unit))
             (rr/bad-request {:type    "invalid-amount"
                              :message "Both amount and amount-unit must be specified or nil"
@@ -50,8 +50,8 @@
 
 (defn update-recipe! [db]
   (fn [request]
-    (let [recipe-id (-> request :parameters :path :recipe-id)
-          recipe (-> request :parameters :body)
+    (let [recipe-id   (-> request :parameters :path :recipe-id)
+          recipe      (-> request :parameters :body)
           successful? (recipe-db/update-recipe! db (assoc recipe :recipe/id recipe-id))]
       (if successful?
         (rr/status 204)
@@ -61,7 +61,7 @@
 
 (defn delete-recipe! [db]
   (fn [request]
-    (let [recipe-id (-> request :parameters :path :recipe-id)
+    (let [recipe-id   (-> request :parameters :path :recipe-id)
           successful? (recipe-db/delete-recipe! db recipe-id)]
       (if successful?
         (rr/status 204)
@@ -71,8 +71,8 @@
 
 (defn create-ingredient! [db]
   (fn [request]
-    (let [recipe-id (-> request :parameters :path :recipe-id)
-          ingredient (-> request :parameters :body)
+    (let [recipe-id     (-> request :parameters :path :recipe-id)
+          ingredient    (-> request :parameters :body)
           ingredient-id (UUID/randomUUID)]
       (recipe-db/insert-ingredient! db (assoc ingredient :ingredient/recipe-id recipe-id
                                               :ingredient/id ingredient-id))
@@ -85,11 +85,11 @@
                                                 :parameters
                                                 :path
                                                 (select-keys [:recipe-id :ingredient-id]))
-          ingredient (-> request
-                         :parameters
-                         :body
-                         (assoc :ingredient/id ingredient-id
-                                :ingredient/recipe-id recipe-id))]
+          ingredient                        (-> request
+                                                :parameters
+                                                :body
+                                                (assoc :ingredient/id ingredient-id
+                                                       :ingredient/recipe-id recipe-id))]
       (if (-> ingredient
               (select-keys [:ingredient/ingredient-recipe-id :ingredient/ingredient-grocery-id])
               (vals)
@@ -110,8 +110,8 @@
                                                 :parameters
                                                 :path
                                                 (select-keys [:recipe-id :ingredient-id]))
-          successful? (recipe-db/delete-ingredient! db {:ingredient/id ingredient-id
-                                                        :ingredient/recipe-id recipe-id})]
+          successful?                       (recipe-db/delete-ingredient! db {:ingredient/id        ingredient-id
+                                                                              :ingredient/recipe-id recipe-id})]
       (if successful?
         (rr/status 204)
         (rr/bad-request {:ingredient/id ingredient-id})))))
@@ -121,18 +121,18 @@
     (with-connection!
       db
       (fn [db]
-        (let [recipe-id (-> request :parameters :path :recipe-id)
+        (let [recipe-id                    (-> request :parameters :path :recipe-id)
               {:keys [amount amount-unit]} (-> request
                                                :parameters
                                                :query)
-              ingredient-bom (recipe-db/ingredient-bom! db {:recipe/id          recipe-id
-                                                            :recipe/amount      amount
-                                                            :recipe/amount-unit amount-unit})
-              grocery-bom (map #(update (grocery-for-amount
-                                         (find-grocery-by-id! db (:ingredient/ingredient-grocery-id %))
-                                         (:ingredient/amount %)
-                                         (:ingredient/amount-unit %))
-                                        :grocery/units
-                                        vec)
-                               ingredient-bom)]
+              ingredient-bom               (recipe-db/ingredient-bom! db {:recipe/id          recipe-id
+                                                                          :recipe/amount      amount
+                                                                          :recipe/amount-unit amount-unit})
+              grocery-bom                  (map #(update (grocery-for-amount
+                                                          (find-grocery-by-id! db (:ingredient/ingredient-grocery-id %))
+                                                          (:ingredient/amount %)
+                                                          (:ingredient/amount-unit %))
+                                                         :grocery/units
+                                                         vec)
+                                                ingredient-bom)]
           (rr/response (vec grocery-bom)))))))

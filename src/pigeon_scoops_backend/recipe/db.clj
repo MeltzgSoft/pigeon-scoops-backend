@@ -26,7 +26,7 @@
   (with-connection!
     db
     (fn [db]
-      (let [[recipe] (sql/find-by-keys db :recipe {:id recipe-id})
+      (let [[recipe]    (sql/find-by-keys db :recipe {:id recipe-id})
             ingredients (sql/query db (-> (h/select :ingredient/* :recipe/name :grocery/name)
                                           (h/from :ingredient)
                                           (h/left-join :recipe [:= :ingredient/ingredient-recipe-id :recipe/id])
@@ -83,9 +83,9 @@
   (with-connection!
     db
     (fn [db]
-      (loop [curr-recipe-ingredients [{:ingredient/ingredient-recipe-id id
-                                       :ingredient/amount               amount
-                                       :ingredient/amount-unit          amount-unit}]
+      (loop [curr-recipe-ingredients  [{:ingredient/ingredient-recipe-id id
+                                        :ingredient/amount               amount
+                                        :ingredient/amount-unit          amount-unit}]
              curr-grocery-ingredients []]
         (if-not (seq curr-recipe-ingredients)
           (combine-amounts curr-grocery-ingredients

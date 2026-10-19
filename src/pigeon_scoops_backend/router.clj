@@ -7,7 +7,7 @@
             [pigeon-scoops-backend.recipe.routes :as recipe]
             [pigeon-scoops-backend.user-order.routes :as user-order]
             [pigeon-scoops-backend.util-api.routes :as util-api]
-            [reitit.coercion.spec :as coercion-spec]
+            [reitit.coercion.malli :as coercion-malli]
             [reitit.dev.pretty :as pretty]
             [reitit.openapi :as openapi]
             [reitit.ring :as ring]
@@ -24,7 +24,7 @@
 (defn- router-config [jwt-config]
   {:validate  rs/validate
    :exception pretty/exception
-   :data      {:coercion   coercion-spec/coercion
+   :data      {:coercion   coercion-malli/coercion
                :muuntaja   m/instance
                :middleware [[wrap-cors
                              :access-control-allow-origin [#"http://localhost:3000"

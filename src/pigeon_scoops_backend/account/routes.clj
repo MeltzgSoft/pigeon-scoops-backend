@@ -9,11 +9,11 @@
   (mw/wrap-with-permission :edit/role))
 
 (defn routes [{:keys [auth] db :jdbc-url}]
-  ["/account" {:openapi    {:tags ["account"]}}
-   ["" {:get {:handler (account/get-accounts! auth db)
-              :middleware [[wrap-edit-roles]]
-              :responses {200 {:body [responses/account]}}
-              :summary "Get account information"}
+  ["/account" {:openapi {:tags ["account"]}}
+   ["" {:get    {:handler    (account/get-accounts! auth db)
+                 :middleware [[wrap-edit-roles]]
+                 :responses  {200 {:body [responses/account]}}
+                 :summary    "Get account information"}
         :post   {:handler   (account/create-account! db)
                  :responses {201 {:body nil?}}
                  :summary   "Create account"}

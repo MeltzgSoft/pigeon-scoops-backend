@@ -28,7 +28,7 @@
       (is (vector? body)))))
 
 (deftest groceries-crud-test
-  (let [grocery-id (atom nil)
+  (let [grocery-id      (atom nil)
         grocery-unit-id (atom nil)]
     (testing "create grocery"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/groceries" {:use-auth? true :body grocery})]

@@ -26,7 +26,7 @@
     db
     (fn [db]
       (let [[grocery] (sql/find-by-keys db :grocery {:id grocery-id})
-            units (find-all-grocery-units! db grocery-id)]
+            units     (find-all-grocery-units! db grocery-id)]
         (when (seq grocery)
           (-> grocery
               (apply-db-str->keyword :grocery/department)

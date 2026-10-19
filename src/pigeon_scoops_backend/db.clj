@@ -54,7 +54,7 @@
   (jdbc/with-options
     (retry! #(create-pool! jdbc-url)
             {:max-attempts connection-max-attempts
-             :delay-ms    connection-retry-delay-ms})
+             :delay-ms     connection-retry-delay-ms})
     jdbc/snake-kebab-opts))
 
 (defmethod ig/halt-key! :db/postgres [_ config]

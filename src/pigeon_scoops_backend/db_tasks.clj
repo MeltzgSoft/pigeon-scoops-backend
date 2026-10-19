@@ -33,10 +33,10 @@
   (with-connection!
     jdbc-url
     (fn [db]
-      (let [now (ZonedDateTime/now)
-            expired (expired-menus (menu-db/find-all-menus! db) now)
+      (let [now         (ZonedDateTime/now)
+            expired     (expired-menus (menu-db/find-all-menus! db) now)
             expired-ids (set (map :menu/id expired))
-            recipes (recipes-to-accept (menu-db/find-active-menu-items! db) expired-ids)]
+            recipes     (recipes-to-accept (menu-db/find-active-menu-items! db) expired-ids)]
         (when (seq recipes)
           (apply (partial order-db/bulk-status-update! db {:status/submitted :status/in-progress
                                                            :status/draft     :status/canceled})
@@ -84,9 +84,9 @@
                        :config-file
                        (load-config!)
                        (init-system!))
-            task (->> opts
-                      :options
-                      :task
-                      (get system))]
+            task   (->> opts
+                        :options
+                        :task
+                        (get system))]
         (task)
         (ig/halt! system)))))

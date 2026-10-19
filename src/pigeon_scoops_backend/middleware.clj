@@ -27,9 +27,9 @@
     :description (str "Middleware to check if a request user is an" table " owner")
     :wrap        (fn [handler db]
                    (fn [request]
-                     (let [uid (-> request :claims :sub)
+                     (let [uid       (-> request :claims :sub)
                            entity-id (-> request :parameters :path id-key)
-                           entity (find-by-id db entity-id)]
+                           entity    (find-by-id db entity-id)]
                        (if (or (= ((keyword (name table) "user-id") entity) uid)
                                (allow-admin-access-fn request))
                          (handler request)
@@ -49,8 +49,8 @@
                      (let [expected-permissions (if (keyword? permissions)
                                                   [permissions]
                                                   permissions)
-                           user-permissions (set (map #(keyword (str/replace % ":" "/"))
-                                                      (get-in request [:claims "https://api.pigeon-scoops.com/perms"])))]
+                           user-permissions     (set (map #(keyword (str/replace % ":" "/"))
+                                                          (get-in request [:claims "https://api.pigeon-scoops.com/perms"])))]
                        (cond
                          (seq (remove nil? (map #(user-permissions %) expected-permissions)))
                          (handler request)

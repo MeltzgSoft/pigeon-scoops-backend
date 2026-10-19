@@ -69,13 +69,13 @@
   ([method uri]
    (test-endpoint method uri nil))
   ([method uri {:keys [use-other-user params use-auth? body retry-status]}]
-   (let [app   (-> state/system :server/routes)
-         user  (if use-other-user (second @test-users) (first @test-users))
-         token (or (if use-other-user (second @tokens) (first @tokens))
-                   (make-test-token user))
-         request (-> (mock/request method uri params)
-                     (cond-> use-auth? (mock/header :authorization (str "Bearer " token))
-                             body (mock/json-body body)))
+   (let [app      (-> state/system :server/routes)
+         user     (if use-other-user (second @test-users) (first @test-users))
+         token    (or (if use-other-user (second @tokens) (first @tokens))
+                      (make-test-token user))
+         request  (-> (mock/request method uri params)
+                      (cond-> use-auth? (mock/header :authorization (str "Bearer " token))
+                              body (mock/json-body body)))
          response (loop [resp (app request)]
                     (if (or (not retry-status)
                             (not= (:status resp) retry-status))
@@ -93,7 +93,7 @@
 
 (defn port-available? [port]
   (try
-    (let [^String host "localhost"
+    (let [^String host  "localhost"
           ^Integer port port]
       (.close (Socket. host port)))
     false
@@ -118,9 +118,9 @@
 (def system-fixture
   (let [postgres-container (atom nil)]
     (strict-fixture
-     {:msg "failed to set up test system"
-      :setup (when-not state/system
-               (fn []
+     {:msg      "failed to set up test system"
+      :setup    (when-not state/system
+                  (fn []
                  ;; TEST_JDBC_URL, when set, is a complete JDBC URL (credentials
                  ;; included) for an externally provided Postgres, and
                  ;; testcontainers is skipped entirely. CI sets it: forge jobs
@@ -129,39 +129,39 @@
                  ;; `services:` sidecar instead, and this is the seam where it
                  ;; is injected. Local dev keeps the zero-setup testcontainers
                  ;; path by leaving the variable unset.
-                 (when-not (env :test-jdbc-url)
-                   (reset! postgres-container
-                           (doto (org.testcontainers.containers.PostgreSQLContainer. "postgres:latest")
-                             (.withDatabaseName "test_db")
-                             (.withUsername "user")
-                             (.withPassword "password")
-                             (.start))))
-                 (let [port     (find-next-available-port (range 3000 4000))
-                       full-uri (or (env :test-jdbc-url)
-                                    (str (.getJdbcUrl @postgres-container)
-                                         "&user=" (.getUsername @postgres-container)
-                                         "&password=" (.getPassword @postgres-container)))]
-                   (ig-repl/set-prep!
-                    (fn []
-                      (let [task-system (-> "resources/db-task-config.edn"
-                                            (load-config!)
-                                            (assoc-in [:db/postgres :jdbc-url] full-uri)
-                                            (init-system!))
-                            migration-task (:db-tasks/migration task-system)]
-                        (migration-task)
-                        (ig/halt! task-system)
-                        (-> (if (env :ci-env)
-                              "resources/server-config.edn"
-                              "dev/resources/server-config.edn")
-                            (load-config!)
-                            (assoc-in [:db/postgres :jdbc-url] full-uri)
-                            (assoc-in [:server/jetty :port] port)
-                            (assoc-in [:auth/auth0 :skip-auth0-delete?] true)
-                            (assoc-in [:auth/auth0 :jwt-config] (local-jwt-config))
-                            (assoc-in [:auth/auth0 :update-roles-fn] local-update-roles!)
-                            (assoc-in [:auth/auth0 :get-roles->uids-fn] local-get-roles->uids!)
-                            (ig/expand)))))
-                   (ig-repl/go))))
+                    (when-not (env :test-jdbc-url)
+                      (reset! postgres-container
+                              (doto (org.testcontainers.containers.PostgreSQLContainer. "postgres:latest")
+                                (.withDatabaseName "test_db")
+                                (.withUsername "user")
+                                (.withPassword "password")
+                                (.start))))
+                    (let [port     (find-next-available-port (range 3000 4000))
+                          full-uri (or (env :test-jdbc-url)
+                                       (str (.getJdbcUrl @postgres-container)
+                                            "&user=" (.getUsername @postgres-container)
+                                            "&password=" (.getPassword @postgres-container)))]
+                      (ig-repl/set-prep!
+                       (fn []
+                         (let [task-system    (-> "resources/db-task-config.edn"
+                                                  (load-config!)
+                                                  (assoc-in [:db/postgres :jdbc-url] full-uri)
+                                                  (init-system!))
+                               migration-task (:db-tasks/migration task-system)]
+                           (migration-task)
+                           (ig/halt! task-system)
+                           (-> (if (env :ci-env)
+                                 "resources/server-config.edn"
+                                 "dev/resources/server-config.edn")
+                               (load-config!)
+                               (assoc-in [:db/postgres :jdbc-url] full-uri)
+                               (assoc-in [:server/jetty :port] port)
+                               (assoc-in [:auth/auth0 :skip-auth0-delete?] true)
+                               (assoc-in [:auth/auth0 :jwt-config] (local-jwt-config))
+                               (assoc-in [:auth/auth0 :update-roles-fn] local-update-roles!)
+                               (assoc-in [:auth/auth0 :get-roles->uids-fn] local-get-roles->uids!)
+                               (ig/expand)))))
+                      (ig-repl/go))))
       :teardown (fn []
                   (ig-repl/halt)
                   ;; nil when the database was injected via TEST_JDBC_URL

@@ -14,19 +14,19 @@
 
 (defn list-all-orders! [db]
   (fn [request]
-    (let [production-manager? (production-manager? request)
+    (let [production-manager?                         (production-manager? request)
           {admin-request? :admin detailed? :detailed} (-> request :parameters :query)
-          uid (if (and admin-request?
-                       production-manager?)
-                :admin
-                (-> request :claims :sub))]
+          uid                                         (if (and admin-request?
+                                                               production-manager?)
+                                                        :admin
+                                                        (-> request :claims :sub))]
       (rr/response (vec (order-db/find-all-orders! db uid detailed?))))))
 
 (defn create-order! [db]
   (fn [request]
     (let [order-id (UUID/randomUUID)
-          uid (-> request :claims :sub)
-          order (-> request :parameters :body)]
+          uid      (-> request :claims :sub)
+          order    (-> request :parameters :body)]
       (order-db/insert-order! db (assoc order
                                         :user-order/id order-id
                                         :user-order/user-id uid))
@@ -36,7 +36,7 @@
 (defn retrieve-order! [db]
   (fn [request]
     (let [order-id (-> request :parameters :path :order-id)
-          order (order-db/find-order-by-id! db order-id)]
+          order    (order-db/find-order-by-id! db order-id)]
       (if order
         (rr/response (update order :user-order/items vec))
         (rr/not-found {:type    "order-not-found"
@@ -45,8 +45,8 @@
 
 (defn update-order! [db]
   (fn [request]
-    (let [order-id (-> request :parameters :path :order-id)
-          order (-> request :parameters :body)
+    (let [order-id    (-> request :parameters :path :order-id)
+          order       (-> request :parameters :body)
           successful? (order-db/update-order! db (assoc order :user-order/id order-id))]
       (if successful?
         (rr/status 204)
@@ -57,7 +57,7 @@
 (defn delete-order! [db]
   (fn [request]
     (let [order-id (-> request :parameters :path :order-id)
-          order (order-db/find-order-by-id! db order-id)]
+          order    (order-db/find-order-by-id! db order-id)]
       (cond
         (not order) (rr/not-found {:type    "order-not-found"
                                    :message "order not found"
@@ -74,17 +74,17 @@
     (with-connection!
       db
       (fn [db]
-        (let [order-id (-> request :parameters :path :order-id)
-              production-manager? (production-manager? request)
+        (let [order-id                                                         (-> request :parameters :path :order-id)
+              production-manager?                                              (production-manager? request)
               {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
-              order-item-id (UUID/randomUUID)
-              active-items (get
-                            (group-by
-                             :menu-item/recipe-id
-                             (menu-db/find-active-menu-items! db))
-                            recipe-id)
-              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes-by-items! db)
-                                                          (map :menu-item/id active-items)))]
+              order-item-id                                                    (UUID/randomUUID)
+              active-items                                                     (get
+                                                                                (group-by
+                                                                                 :menu-item/recipe-id
+                                                                                 (menu-db/find-active-menu-items! db))
+                                                                                recipe-id)
+              active-item-sizes                                                (when active-items (apply (partial menu-db/find-menu-item-sizes-by-items! db)
+                                                                                                         (map :menu-item/id active-items)))]
           (cond
             (not (or production-manager? (seq active-items)))
             (rr/bad-request {:type    "recipe-not-in-active-menu"
@@ -113,30 +113,30 @@
     (with-connection!
       db
       (fn [db]
-        (let [{:keys [order-id order-item-id]} (-> request
-                                                   :parameters
-                                                   :path
-                                                   (select-keys [:order-id :order-item-id]))
-              production-manager? (production-manager? request)
+        (let [{:keys [order-id order-item-id]}                                 (-> request
+                                                                                   :parameters
+                                                                                   :path
+                                                                                   (select-keys [:order-id :order-item-id]))
+              production-manager?                                              (production-manager? request)
               {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
-              order-item (assoc order-item
-                                :order-item/id order-item-id
-                                :order-item/order-id order-id)
-              curr-item-status (->> order-item-id
-                                    (order-db/find-order-item-by-id! db)
-                                    :order-item/status)
-              active-items (get
-                            (group-by
-                             :menu-item/recipe-id
-                             (menu-db/find-active-menu-items! db))
-                            recipe-id)
-              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes-by-items! db)
-                                                          (map :menu-item/id active-items)))]
+              order-item                                                       (assoc order-item
+                                                                                      :order-item/id order-item-id
+                                                                                      :order-item/order-id order-id)
+              curr-item-status                                                 (->> order-item-id
+                                                                                    (order-db/find-order-item-by-id! db)
+                                                                                    :order-item/status)
+              active-items                                                     (get
+                                                                                (group-by
+                                                                                 :menu-item/recipe-id
+                                                                                 (menu-db/find-active-menu-items! db))
+                                                                                recipe-id)
+              active-item-sizes                                                (when active-items (apply (partial menu-db/find-menu-item-sizes-by-items! db)
+                                                                                                         (map :menu-item/id active-items)))]
           (cond
             (not= curr-item-status :status/draft)
-            (rr/bad-request {:type "recipe-not-editable"
+            (rr/bad-request {:type    "recipe-not-editable"
                              :message "only draft order items can be changed"
-                             :data (str "status " curr-item-status)})
+                             :data    (str "status " curr-item-status)})
             (not (or production-manager? (seq active-items)))
             (rr/bad-request {:type    "recipe-not-in-active-menu"
                              :message "recipe is not in an active menu"
@@ -165,16 +165,16 @@
                                                    :parameters
                                                    :path
                                                    (select-keys [:order-id :order-item-id]))
-              new-status (-> request
-                             :parameters
-                             :body
-                             :order-item/status)
-              production-manager? (production-manager? request)
-              curr-item (order-db/find-order-item-by-id! db order-item-id)
-              curr-item-status (:order-item/status curr-item)
-              patch {:order-item/id order-item-id
-                     :order-item/order-id order-id
-                     :order-item/status new-status}]
+              new-status                       (-> request
+                                                   :parameters
+                                                   :body
+                                                   :order-item/status)
+              production-manager?              (production-manager? request)
+              curr-item                        (order-db/find-order-item-by-id! db order-item-id)
+              curr-item-status                 (:order-item/status curr-item)
+              patch                            {:order-item/id       order-item-id
+                                                :order-item/order-id order-id
+                                                :order-item/status   new-status}]
           (cond
             (and (not production-manager?)
                  (not (#{:status/draft :status/submitted :status/canceled} new-status)))
@@ -189,7 +189,7 @@
                               :type    :authorization-required})
                 (rr/status 401))
             :else
-            (let [size-id (:order-item/menu-item-size-id curr-item)
+            (let [size-id  (:order-item/menu-item-size-id curr-item)
                   size-qty (some-> (:order-item/menu-item-size-quantity curr-item) long)]
               (jdbc/with-transaction+options [conn db]
                 (cond
@@ -218,8 +218,8 @@
                                                    :parameters
                                                    :path
                                                    (select-keys [:order-id :order-item-id]))
-              curr-item (order-db/find-order-item-by-id! db order-item-id)
-              order-item-status (:order-item/status curr-item)]
+              curr-item                        (order-db/find-order-item-by-id! db order-item-id)
+              order-item-status                (:order-item/status curr-item)]
           (cond
             (terminal? order-item-status)
             (rr/bad-request {:type    "non-deletable-status"
@@ -244,23 +244,23 @@
     (with-connection!
       db
       (fn [db]
-        (let [order-id (-> request :parameters :path :order-id)
+        (let [order-id                   (-> request :parameters :path :order-id)
               {:user-order/keys [items]} (order-db/find-order-by-id! db order-id)
-              grocery-bom (->> items
-                               (mapcat #(recipe-db/ingredient-bom! db {:recipe/id          (:order-item/recipe-id %)
-                                                                       :recipe/amount      (:order-item/amount %)
-                                                                       :recipe/amount-unit (:order-item/amount-unit %)}))
-                               (#(combine-amounts %
-                                                  :ingredient/amount
-                                                  :ingredient/amount-unit
-                                                  :ingredient/ingredient-recipe-id
-                                                  :ingredient/ingredient-grocery-id))
-                               (map #(update (grocery-for-amount
-                                              (find-grocery-by-id! db (:ingredient/ingredient-grocery-id %))
-                                              (:ingredient/amount %)
-                                              (:ingredient/amount-unit %))
-                                             :grocery/units
-                                             vec)))]
+              grocery-bom                (->> items
+                                              (mapcat #(recipe-db/ingredient-bom! db {:recipe/id          (:order-item/recipe-id %)
+                                                                                      :recipe/amount      (:order-item/amount %)
+                                                                                      :recipe/amount-unit (:order-item/amount-unit %)}))
+                                              (#(combine-amounts %
+                                                                 :ingredient/amount
+                                                                 :ingredient/amount-unit
+                                                                 :ingredient/ingredient-recipe-id
+                                                                 :ingredient/ingredient-grocery-id))
+                                              (map #(update (grocery-for-amount
+                                                             (find-grocery-by-id! db (:ingredient/ingredient-grocery-id %))
+                                                             (:ingredient/amount %)
+                                                             (:ingredient/amount-unit %))
+                                                            :grocery/units
+                                                            vec)))]
           (rr/response (vec grocery-bom)))))))
 
 (defn list-in-progress-items! [db]

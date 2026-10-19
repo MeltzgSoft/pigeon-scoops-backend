@@ -3,8 +3,10 @@
             [pigeon-scoops-backend.units.mass :as mass]
             [pigeon-scoops-backend.units.volume :as vol]))
 
-(def other-units #{:common/pinch
-                   :common/unit})
+(def other-units [:common/pinch
+                  :common/unit])
+
+(def all-units (concat other-units (keys mass/conversion-map) (keys vol/conversion-map)))
 
 (defn convert [val from to]
   (if (and (some #{from} other-units)
@@ -20,7 +22,7 @@
               (not (and (from conversion-map)
                         (to conversion-map))))
         nil
-        (let [standard-mass (* val (from conversion-map))
+        (let [standard-mass     (* val (from conversion-map))
               conversion-factor (to conversion-map)]
           (/ standard-mass conversion-factor))))))
 

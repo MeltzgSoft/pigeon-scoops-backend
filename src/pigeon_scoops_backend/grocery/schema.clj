@@ -1,31 +1,35 @@
 (ns pigeon-scoops-backend.grocery.schema
-  (:require [spec-tools.data-spec :as ds]))
+  (:require [pigeon-scoops-backend.units.common :as common]
+            [pigeon-scoops-backend.units.mass :as mass]
+            [pigeon-scoops-backend.units.volume :as volume]))
 
 (def departments
-  #{:department/dairy
-    :department/produce
-    :department/grocery})
+  [:department/dairy
+   :department/produce
+   :department/grocery])
 
 (def grocery-unit
-  {:grocery-unit/id                        uuid?
-   :grocery-unit/grocery-id                uuid?
-   :grocery-unit/source                    string?
-   :grocery-unit/unit-cost                 number?
-   (ds/opt :grocery-unit/unit-mass)        number?
-   (ds/opt :grocery-unit/unit-mass-type)   keyword?
-   (ds/opt :grocery-unit/unit-volume)      number?
-   (ds/opt :grocery-unit/unit-volume-type) keyword?
-   (ds/opt :grocery-unit/unit-common)      number?
-   (ds/opt :grocery-unit/unit-common-type) keyword?
-   (ds/opt :grocery-unit/quantity)         int?})
+  [:map
+   [:grocery-unit/id :uuid]
+   [:grocery-unit/grocery-id :uuid]
+   [:grocery-unit/source :string]
+   [:grocery-unit/unit-cost :double]
+   [:grocery-unit/unit-mass {:optional true :min 0} :double]
+   [:grocery-unit/unit-mass-type {:optional true} (vec (concat [:enum] (keys mass/conversion-map)))]
+   [:grocery-unit/unit-volume {:optional true :min 0} :double]
+   [:grocery-unit/unit-volume-type {:optional true} (vec (concat [:enum] (keys volume/conversion-map)))]
+   [:grocery-unit/unit-common {:optional true :min 0} :double]
+   [:grocery-unit/unit-common-type {:optional true} (vec (concat [:enum] common/other-units))]
+   [:grocery-unit/quantity {:optional true :min 0} :int]])
 
 (def grocery
-  {:grocery/id                       uuid?
-   :grocery/name                     string?
-   :grocery/department               keyword?
-   (ds/opt :grocery/units)           [grocery-unit]
-   (ds/opt :grocery/required-amount) number?
-   (ds/opt :grocery/required-unit)   keyword?
-   (ds/opt :grocery/purchase-amount) number?
-   (ds/opt :grocery/purchase-unit)   keyword?
-   (ds/opt :grocery/waste-ratio)     number?})
+  [:map
+   [:grocery/id :uuid]
+   [:grocery/name :string]
+   [:grocery/department (vec (concat [:enum] departments))]
+   [:grocery/units {:optional true} [:vector grocery-unit]]
+   [:grocery/required-amount {:optional true :min 0} :double]
+   [:grocery/required-unit {:optional true} (vec (concat [:enum] common/all-units))]
+   [:grocery/purchase-amount {:optional true :min 0} :int]
+   [:grocery/purchase-unit {:optional true} (vec (concat [:enum] common/all-units))]
+   [:grocery/waste-ratio {:optional true :min 0 :max 1} :double]])

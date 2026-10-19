@@ -13,7 +13,8 @@
             [clojure.pprint :refer [pprint]]
             [pigeon-scoops-backend.db]
             [pigeon-scoops-backend.db-tasks]
-            [pigeon_scoops_backend.server])
+            [pigeon_scoops_backend.server]
+            [pigeon-scoops-backend.units.common :as common])
   (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
@@ -40,25 +41,25 @@
   ([method uri]
    (make-request! method uri nil))
   ([method uri opts]
-   (let [app (-> state/system :server/routes)
-         auth (-> state/system :auth/auth0)
+   (let [app      (-> state/system :server/routes)
+         auth     (-> state/system :auth/auth0)
          response (app (-> (mock/request method uri)
                            (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or (first @tokens) (get-token! (conj auth (first @test-users))))))
                                    (:body opts) (mock/json-body (:body opts)))))
          response (update response :body #(try
                                             (m/decode "application/json" %)
                                             (catch Exception e
-                                              (pprint {:body (:body response)
+                                              (pprint {:body   (:body response)
                                                        :status (:status response)
-                                                       :cause (:cause e)})
+                                                       :cause  (:cause e)})
                                               nil)))]
 
      response)))
 
 (defn make-test-users! [n]
-  (let [auth (:auth/auth0 state/system)
-        usernames (repeatedly n #(str "repl-user" (UUID/randomUUID) "@pigeon-scoops.com"))
-        passwords (repeatedly n #(str (UUID/randomUUID)))
+  (let [auth             (:auth/auth0 state/system)
+        usernames        (repeatedly n #(str "repl-user" (UUID/randomUUID) "@pigeon-scoops.com"))
+        passwords        (repeatedly n #(str (UUID/randomUUID)))
         create-responses (mapv #(auth0/create-user! auth
                                                     {:connection "Username-Password-Authentication"
                                                      :email      %1
@@ -222,24 +223,24 @@
 
 (ig-repl/set-prep!
  (fn []
-   (let [base-config (load-config! "resources/server-config.edn")
-         _ (pprint base-config)
-         jdbc-url (or (-> base-config :db/postgres :jdbc-url)
-                      (do
-                        (when (nil? @db-container)
-                          (println "resetting db")
-                          (reset! db-container (doto (PostgreSQLContainer. "postgres:latest")
-                                                 (.withDatabaseName "test_db")
-                                                 (.withUsername "user")
-                                                 (.withPassword "password")
-                                                 (.start))))
-                        (str (.getJdbcUrl @db-container)
-                             "&user=" (.getUsername @db-container)
-                             "&password=" (.getPassword @db-container))))
-         task-system (-> "resources/db-task-config.edn"
-                         (load-config!)
-                         (assoc-in [:db/postgres :jdbc-url] jdbc-url)
-                         (init-system!))
+   (let [base-config    (load-config! "resources/server-config.edn")
+         _              (pprint base-config)
+         jdbc-url       (or (-> base-config :db/postgres :jdbc-url)
+                            (do
+                              (when (nil? @db-container)
+                                (println "resetting db")
+                                (reset! db-container (doto (PostgreSQLContainer. "postgres:latest")
+                                                       (.withDatabaseName "test_db")
+                                                       (.withUsername "user")
+                                                       (.withPassword "password")
+                                                       (.start))))
+                              (str (.getJdbcUrl @db-container)
+                                   "&user=" (.getUsername @db-container)
+                                   "&password=" (.getPassword @db-container))))
+         task-system    (-> "resources/db-task-config.edn"
+                            (load-config!)
+                            (assoc-in [:db/postgres :jdbc-url] jdbc-url)
+                            (init-system!))
          migration-task (:db-tasks/migration task-system)]
      (println "JDBC-URI:" (str (.getJdbcUrl @db-container)
                                "&user=" (.getUsername @db-container)
@@ -283,9 +284,10 @@
                (map #(make-request! :get (str "/v1/" v "/" %) {:auth true}))
                (map :body)
                (vector k)))
-        {:recipe "recipes"
-         :grocery "groceries"
+        {:recipe     "recipes"
+         :grocery    "groceries"
          :user-order "orders"})))))
+  (common/convert 1 :volume/floz :volume/tbsp)
   (go!)
   (go! false)
   @tokens

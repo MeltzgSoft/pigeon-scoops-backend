@@ -10,7 +10,7 @@
     (with-connection!
       db
       (fn [db]
-        (let [accounts (account-db/find-all-accounts! db)
+        (let [accounts    (account-db/find-all-accounts! db)
               roles->uids (update-vals (auth0/get-roles->uids! auth) set)]
           (rr/response
            (map (fn [acct]
@@ -28,7 +28,7 @@
       db
       (fn [db]
         (let [{:keys [sub picture] :as claims} (:claims request)
-              existing-account (account-db/find-account-by-id! db sub)]
+              existing-account                 (account-db/find-account-by-id! db sub)]
           (if existing-account
             (rr/status 204)
             (do
@@ -37,7 +37,7 @@
 
 (defn delete-account! [auth db]
   (fn [request]
-    (let [uid (-> request :claims :sub)
+    (let [uid                   (-> request :claims :sub)
           delete-auth0-account! (auth0/delete-user! auth uid)]
       (if (= (:status delete-auth0-account!) 204)
         (do
@@ -49,7 +49,7 @@
 
 (defn update-roles! [auth]
   (fn [request]
-    (let [uid (-> request :parameters :path :user-id form-decode)
+    (let [uid   (-> request :parameters :path :user-id form-decode)
           roles (-> request :parameters :body :roles)]
       (if (auth0/update-roles! auth uid roles)
         (rr/status 204)

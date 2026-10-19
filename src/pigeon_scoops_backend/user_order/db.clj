@@ -56,11 +56,11 @@
   [db user-id detailed?]
   (with-connection!
     db (fn [db]
-         (let [orders (sql/find-by-keys
-                       db
-                       :user-order
-                       (cond-> {:user-order/deleted false}
-                         (not= user-id :admin) (assoc :user-order/user-id user-id)))
+         (let [orders      (sql/find-by-keys
+                            db
+                            :user-order
+                            (cond-> {:user-order/deleted false}
+                              (not= user-id :admin) (assoc :user-order/user-id user-id)))
                order-items (when (seq orders)
                              (->> orders
                                   (map :user-order/id)
@@ -75,8 +75,8 @@
   (with-connection!
     db (fn [db]
          (let [[order] (sql/find-by-keys db :user-order {:id order-id})
-               items (get (find-all-order-items! db order-id)
-                          order-id)]
+               items   (get (find-all-order-items! db order-id)
+                            order-id)]
            (when (seq order)
              (-> order
                  (assoc :user-order/status (infer-order-status items)

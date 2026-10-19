@@ -1,9 +1,5 @@
 (ns pigeon-scoops-backend.user-order.schema
-  (:require [clojure.spec.alpha :as s]
-            [pigeon-scoops-backend.units.common :as common]
-            [pigeon-scoops-backend.units.mass :as mass]
-            [pigeon-scoops-backend.units.volume :as volume]
-            [spec-tools.data-spec :as ds]))
+  (:require [pigeon-scoops-backend.units.common :as common]))
 
 (def status
   [:status/draft
@@ -16,22 +12,21 @@
   (#{:status/complete :status/in-progress} s))
 
 (def order-item
-  {(ds/opt :order-item/id)                   uuid?
-   :order-item/recipe-id            uuid?
-   (ds/opt :order-item/order-id)             uuid?
-   :order-item/status               (s/and keyword? (set status))
-   (ds/opt :order-item/amount)      pos?
-   (ds/opt :order-item/amount-unit) (s/and keyword?
-                                           (set (concat common/other-units
-                                                        (keys mass/conversion-map)
-                                                        (keys volume/conversion-map))))
-   (ds/opt :order-item/menu-item-size-id) uuid?
-   (ds/opt :order-item/menu-item-size-quantity) pos?})
+  [:map
+   [:order-item/id {:optional true} :uuid]
+   [:order-item/recipe-id :uuid]
+   [:order-item/order-id {:optional true} :uuid]
+   [:order-item/status (vec (concat [:enum] status))]
+   [:order-item/amount {:optional true} {:min 0} :double]
+   [:order-item/amount-unit {:optional true} (vec (concat [:enum] common/all-units))]
+   [:order-item/menu-item-size-id {:optional true} :uuid]
+   [:order-item/menu-item-size-quantity {:optional true} {:min 0} :int]])
 
 (def order
-  {:user-order/id             uuid?
-   :user-order/note           string?
-   :user-order/user-id        string?
-   :user-order/status         (s/and keyword? (set status))
-   :user-order/created-at     inst?
-   (ds/opt :user-order/items) [order-item]})
+  [:map
+   [:user-order/id :uuid]
+   [:user-order/note :string]
+   [:user-order/user-id :string]
+   [:user-order/status (vec (concat [:enum] status))]
+   [:user-order/created-at :time/instant]
+   [:user-order/items {:optional true} [:vector order-item]]])
