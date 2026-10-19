@@ -28,7 +28,7 @@
                :muuntaja   m/instance
                :middleware [[wrap-cors
                              :access-control-allow-origin [#"http://localhost:3000"
-                                                           #"https://pigeon-scoops.com"]
+                                                           #"https://pigeonscoops.com"]
                              :access-control-allow-methods [:get :patch :post :put :delete]]
                             swagger/swagger-feature
                             muuntaja/format-middleware
