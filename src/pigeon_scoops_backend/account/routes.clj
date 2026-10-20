@@ -1,8 +1,6 @@
 (ns pigeon-scoops-backend.account.routes
-  (:require [clojure.spec.alpha :as s]
-            [pigeon-scoops-backend.account.schema :as responses]
+  (:require [pigeon-scoops-backend.account.schema :as schema]
             [pigeon-scoops-backend.account.handlers :as account]
-            [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.middleware :as mw]))
 
 (def wrap-edit-roles
@@ -12,17 +10,17 @@
   ["/account" {:openapi {:tags ["account"]}}
    ["" {:get    {:handler    (account/get-accounts! auth db)
                  :middleware [[wrap-edit-roles]]
-                 :responses  {200 {:body [responses/account]}}
+                 :responses  {200 {:body schema/list-response}}
                  :summary    "Get account information"}
         :post   {:handler   (account/create-account! db)
-                 :responses {201 {:body nil?}}
+                 :responses {201 {:body :nil}}
                  :summary   "Create account"}
         :delete {:handler   (account/delete-account! auth db)
-                 :responses {204 {:body nil?}}
+                 :responses {204 {:body :nil}}
                  :summary   "Delete account"}}]
-   ["/:user-id" {:parameters {:path {:user-id string?}}
+   ["/:user-id" {:parameters {:path [:map [:user-id :string]]}
                  :put        {:handler    (account/update-roles! auth)
                               :middleware [[wrap-edit-roles]]
-                              :parameters {:body {:roles [(s/and keyword? auth0/roles)]}}
-                              :responses  {204 {:body nil?}}
+                              :parameters {:body schema/user-update-req}
+                              :responses  {204 {:body :nil}}
                               :summary    "Update user roles"}}]])

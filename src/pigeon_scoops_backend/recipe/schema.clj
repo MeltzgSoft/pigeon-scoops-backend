@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.recipe.schema
-  (:require [pigeon-scoops-backend.units.common :as common]))
+  (:require [pigeon-scoops-backend.units.schema :as unit-schema]))
 
 (def ingredient
   [:map
@@ -10,7 +10,7 @@
    [:ingredient/ingredient-grocery-id {:optional true} :uuid]
    [:ingredient/ingredient-recipe-id {:optional true} :uuid]
    [:ingredient/amount {:min 0} :double]
-   [:ingredient/amount-unit (vec (concat [:enum] common/all-units))]])
+   [:ingredient/amount-unit unit-schema/all-units-enum]])
 
 (def recipe
   [:map
@@ -18,7 +18,7 @@
    [:recipe/name :string]
    [:recipe/is-mystery :boolean]
    [:recipe/amount {:min 0} :double]
-   [:recipe/amount-unit (vec (concat [:enum] common/all-units))]
+   [:recipe/amount-unit unit-schema/all-units-enum]
    [:recipe/source :string]
    [:recipe/instructions {:optional true} [:vector :string]]
    [:recipe/ingredients {:optional true} [:vector ingredient]]

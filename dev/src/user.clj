@@ -6,7 +6,8 @@
             [integrant.core :as ig]
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
-            [muuntaja.core :as m]
+            [muuntaja.core :as mtj]
+            [malli.core :as m]
             [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.utils :refer [init-system! load-config!]]
             [ring.mock.request :as mock]
@@ -14,7 +15,8 @@
             [pigeon-scoops-backend.db]
             [pigeon-scoops-backend.db-tasks]
             [pigeon_scoops_backend.server]
-            [pigeon-scoops-backend.units.common :as common])
+            [pigeon-scoops-backend.units.common :as common]
+            [pigeon-scoops-backend.units.schema :as unit-schema])
   (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
@@ -26,15 +28,15 @@
 (defn get-token! [{:keys [test-client-id username password]}]
   (->> {:content-type  :json
         :cookie-policy :standard
-        :body          (m/encode "application/json"
-                                 {:client_id  test-client-id
-                                  :audience   "https://pigeon-scoops.us.auth0.com/api/v2/"
-                                  :grant_type "password"
-                                  :username   username
-                                  :password   password
-                                  :scope      "openid profile email"})}
+        :body          (mtj/encode "application/json"
+                                   {:client_id  test-client-id
+                                    :audience   "https://pigeon-scoops.us.auth0.com/api/v2/"
+                                    :grant_type "password"
+                                    :username   username
+                                    :password   password
+                                    :scope      "openid profile email"})}
        (http/post "https://pigeon-scoops.us.auth0.com/oauth/token")
-       (m/decode-response-body)
+       (mtj/decode-response-body)
        :access_token))
 
 (defn make-request!
@@ -47,7 +49,7 @@
                            (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or (first @tokens) (get-token! (conj auth (first @test-users))))))
                                    (:body opts) (mock/json-body (:body opts)))))
          response (update response :body #(try
-                                            (m/decode "application/json" %)
+                                            (mtj/decode "application/json" %)
                                             (catch Exception e
                                               (pprint {:body   (:body response)
                                                        :status (:status response)
@@ -288,6 +290,8 @@
          :grocery    "groceries"
          :user-order "orders"})))))
   (common/convert 1 :volume/floz :volume/tbsp)
+  (m/coerce :string 22)
+  {:mass unit-schema/mass-enum :volume unit-schema/volume-enum :common unit-schema/common-enum :all unit-schema/all-units-enum}
   (go!)
   (go! false)
   @tokens

@@ -1,14 +1,14 @@
 (ns pigeon-scoops-backend.util-api.schema
-  (:require [pigeon-scoops-backend.auth :refer [roles]]
-            [pigeon-scoops-backend.grocery.schema :refer [departments]]
-            [pigeon-scoops-backend.menu.schema :refer [durations]]
-            [pigeon-scoops-backend.units.common :as common]
-            [pigeon-scoops-backend.user-order.schema :refer [status]]))
+  (:require [pigeon-scoops-backend.account.schema :as account-schema]
+            [pigeon-scoops-backend.grocery.schema :as grocery-schema]
+            [pigeon-scoops-backend.menu.schema :as menu-schema]
+            [pigeon-scoops-backend.units.schema :as unit-schema]
+            [pigeon-scoops-backend.user-order.schema :as order-schema]))
 
 (def constants
   [:map
-   [:constants/unit-types [:vector (vec (concat [:enum] common/all-units))]]
-   [:constants/departments [:vector (vec (concat [:enum] departments))]]
-   [:constants/roles [:vector (vec (concat [:enum] roles))]]
-   [:constants/order-statuses [:vector (vec (concat [:enum] status))]]
-   [:constants/menu-durations [:vector (vec (concat [:enum] durations))]]])
+   [:constants/unit-types [:vector unit-schema/all-units-enum]]
+   [:constants/departments [:vector grocery-schema/departments-enum]]
+   [:constants/roles [:vector account-schema/roles-enum]]
+   [:constants/order-statuses [:vector order-schema/status-enum]]
+   [:constants/menu-durations [:vector menu-schema/duration-enum]]])
