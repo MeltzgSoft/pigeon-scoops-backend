@@ -36,22 +36,12 @@
                       :recipe/amount-unit]))
 
 (def get-recipe-query
-  (->> recipe
-       (rest)
-       (filter (comp #{:recipe/amount
-                       :recipe/amount-unit}
-                     first))
-       (concat [:map])
-       (vec)))
+  (sub-schema recipe [[:recipe/amount {:optional true}]
+                      [:recipe/amount-unit {:optional true}]]))
 
 (def create-ingredient
-  (->> recipe
-       (rest)
-       (filter (comp #{:ingrdient/amount
-                       :ingredient/amount-unit
-                       :ingredient/ingredient-grocery-id
-                       :ingredient/ingredient-recipe-id}
-                     first))
-       (concat [:map])
-       (vec)))
+  (sub-schema ingredient [:ingrdient/amount
+                          :ingredient/amount-unit
+                          :ingredient/ingredient-grocery-id
+                          :ingredient/ingredient-recipe-id]))
 
