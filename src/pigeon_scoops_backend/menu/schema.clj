@@ -34,3 +34,10 @@
    [:menu/duration-type duration-enum]
    [:menu/items {:optional true} [:vector menu-item]]
    [:menu/end-time {:optional true} :time/instant]])
+
+(def get-menu-query
+  [:map
+   [:include-inactive :boolean]
+   [:detailed :boolean]])
+
+

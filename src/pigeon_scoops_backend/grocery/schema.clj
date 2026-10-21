@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.grocery.schema
-  (:require [pigeon-scoops-backend.units.schema :as unit-schema]))
+  (:require [pigeon-scoops-backend.schema :refer [sub-schema]]
+            [pigeon-scoops-backend.units.schema :as unit-schema]))
 
 (def departments
   [:department/dairy
@@ -36,21 +37,16 @@
    [:grocery/waste-ratio {:optional true :min 0 :max 1} :double]])
 
 (def create-grocery
-  (->> grocery
-       (rest)
-       (filter (comp #{:grocery/name :grocery/department} first))
-       (concat [:map])
-       (vec)))
+  (sub-schema grocery [:grocery/name
+                       :grocery/department]))
 
 (def create-grocery-unit
-  (->> grocery-unit
-       (rest)
-       (filter (comp #{:grocery-unit/source
-                       :grocery-unit/unit-cost
-                       :grocery-unit/unit-common
-                       :grocery-unit/unit-common-type
-                       :grocery-unit/unit-mass
-                       :grocery-unit/unit-mass-type
-                       :grocery-unit/unit-volume
-                       :grocery-unit/unit-volume-type}))))
+  (sub-schema grocery-unit [:grocery-unit/source
+                            :grocery-unit/unit-cost
+                            :grocery-unit/unit-common
+                            :grocery-unit/unit-common-type
+                            :grocery-unit/unit-mass
+                            :grocery-unit/unit-mass-type
+                            :grocery-unit/unit-volume
+                            :grocery-unit/unit-volume-type]))
 
