@@ -9,7 +9,7 @@
   [:map
    [:account/id :string]
    [:account/name :string]
-   [:account/roles roles-enum]])
+   [:account/roles [:vector roles-enum]]])
 
 (def list-response
   [:vector account])

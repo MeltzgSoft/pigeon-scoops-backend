@@ -20,10 +20,10 @@
    [:order-item/recipe-id :uuid]
    [:order-item/order-id {:optional true} :uuid]
    [:order-item/status status-enum]
-   [:order-item/amount {:optional true} {:min 0} :double]
-   [:order-item/amount-unit {:optional true} unit-schema/all-units-enum]
-   [:order-item/menu-item-size-id {:optional true} :uuid]
-   [:order-item/menu-item-size-quantity {:optional true} {:min 0} :int]])
+   [:order-item/amount [:and :double [:> 0]]]
+   [:order-item/amount-unit unit-schema/all-units-enum]
+   [:order-item/menu-item-size-id {:optional true} [:maybe :uuid]]
+   [:order-item/menu-item-size-quantity {:optional true} [:and :double [:> 0]]]])
 
 (def order
   [:map
@@ -31,5 +31,6 @@
    [:user-order/note :string]
    [:user-order/user-id :string]
    [:user-order/status status-enum]
-   [:user-order/created-at :time/instant]
+   [:user-order/created-at inst?]
    [:user-order/items {:optional true} [:vector order-item]]])
+

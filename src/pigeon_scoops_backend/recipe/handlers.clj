@@ -12,7 +12,7 @@
   (fn [_]
     (let [recipes (->> (recipe-db/find-all-recipes! db false)
                        (map transforms/anonymize-mystery-recipe))]
-      (rr/response (doall recipes)))))
+      (rr/response (vec recipes)))))
 
 (defn create-recipe! [db]
   (fn [request]

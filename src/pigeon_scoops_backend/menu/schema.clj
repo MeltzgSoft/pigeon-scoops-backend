@@ -1,6 +1,5 @@
 (ns pigeon-scoops-backend.menu.schema
-  (:require [pigeon-scoops-backend.schema :refer [sub-schema]]
-            [pigeon-scoops-backend.units.schema :as unit-schema]))
+  (:require [pigeon-scoops-backend.units.schema :as unit-schema]))
 
 (def durations
   [:duration/day
@@ -14,7 +13,7 @@
   [:map
    [:menu-item-size/id :uuid]
    [:menu-item-size/menu-item-id :uuid]
-   [:menu-item-size/amount {:min 0} :double]
+   [:menu-item-size/amount [:and :double [:> 0]]]
    [:menu-item-size/amount-unit unit-schema/all-units-enum]
    [:menu-item-size/available-quantity {:optional true} :int]])
 
@@ -31,28 +30,8 @@
    [:menu/name :string]
    [:menu/repeats {:optional true} :boolean]
    [:menu/active {:optional true} :boolean]
-   [:menu/duration {:min 0} :int]
+   [:menu/duration [:and :int [:> 0]]]
    [:menu/duration-type duration-enum]
    [:menu/items {:optional true} [:vector menu-item]]
-   [:menu/end-time {:optional true} :time/instant]])
-
-(def get-menus-query
-  [:map
-   [:include-inactive {:optional true} :boolean]
-   [:detailed {:optional true} :boolean]])
-
-(def create-menu
-  (sub-schema menu [:menu/name
-                    :menu/repeats
-                    :menu/active
-                    :menu/duration
-                    :menu/duration-type]))
-
-(def create-menu-item
-  (sub-schema menu-item [:menu-item/recipe-id]))
-
-(def create-menu-item-size
-  (sub-schema menu-item-size [:menu-item-size/amount
-                              :menu-item-size/amount-unit
-                              :menu-item-size/available-quantity]))
+   [:menu/end-time {:optional true} inst?]])
 

@@ -150,9 +150,7 @@
                                migration-task (:db-tasks/migration task-system)]
                            (migration-task)
                            (ig/halt! task-system)
-                           (-> (if (env :ci-env)
-                                 "resources/server-config.edn"
-                                 "dev/resources/server-config.edn")
+                           (-> "resources/server-config.edn"
                                (load-config!)
                                (assoc-in [:db/postgres :jdbc-url] full-uri)
                                (assoc-in [:server/jetty :port] port)

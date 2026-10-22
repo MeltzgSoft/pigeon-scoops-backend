@@ -272,10 +272,10 @@
                            :order-item/recipe-id
                            (when separate-sizes?
                              :order-item/menu-item-size-id))
-          ((partial map #(apply dissoc % (concat [:order-item/id :order-item/order-id]
-                                                 (when-not separate-sizes?
-                                                   [:order-item/menu-item-size-id
-                                                    :order-item/menu-item-size-quantity])))))
+          ((partial mapv #(apply dissoc % (concat [:order-item/id :order-item/order-id]
+                                                  (when-not separate-sizes?
+                                                    [:order-item/menu-item-size-id
+                                                     :order-item/menu-item-size-quantity])))))
           (rr/response)))))
 
 (defn complete-orders-for-recipe! [db]

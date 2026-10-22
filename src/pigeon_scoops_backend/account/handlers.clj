@@ -13,14 +13,14 @@
         (let [accounts    (account-db/find-all-accounts! db)
               roles->uids (update-vals (auth0/get-roles->uids! auth) set)]
           (rr/response
-           (map (fn [acct]
-                  (assoc acct :account/roles
-                         (remove nil?
-                                 (map (fn [[role uids]]
-                                        (when (uids (:account/id acct))
-                                          role))
-                                      roles->uids))))
-                accounts)))))))
+           (mapv #(assoc % :account/roles
+                         (->> roles->uids
+                              (map (fn [[role uids]]
+                                     (when (uids (:account/id %))
+                                       role)))
+                              (remove nil?)
+                              (vec)))
+                 accounts)))))))
 
 (defn create-account! [db]
   (fn [request]

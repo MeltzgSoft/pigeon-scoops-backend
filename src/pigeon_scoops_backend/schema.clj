@@ -1,4 +1,5 @@
-(ns pigeon-scoops-backend.schema)
+(ns pigeon-scoops-backend.schema
+  (:require [clojure.set :as set]))
 
 (def create-response
   [:map
@@ -12,13 +13,17 @@
 (defn sub-schema
   "Extract a schema from a subset of attributes. keep-keys can contain keywords and [keyword option-overrides]"
   [schema keep-keys]
-  (let [schema-keys      (map #(if (keyword? %) % (first %)) keep-keys)
+  (let [keys-to-keep     (map #(if (keyword? %) % (first %)) keep-keys)
         option-overrides (->> keep-keys
                               (filter #(not (keyword? %)))
                               (into {}))]
+    (when-not (set/subset? (set keys-to-keep) (set (map first (rest schema))))
+      (throw (ex-info "Original schema is missing keys from sub-schema request"
+                      {:schema    schema
+                       :keep-keys keep-keys})))
     (->> schema
          (rest)
-         (filter (comp (set schema-keys) first))
+         (filter (comp (set keys-to-keep) first))
          (map #(if ((first %) option-overrides)
                  (update-options % ((first %) option-overrides))
                  %))
