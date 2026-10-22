@@ -184,7 +184,7 @@
                 (rr/status 401))
             (and (not production-manager?)
                  (#{:status/in-progress :status/complete :status/canceled} curr-item-status))
-            (-> (rr/response {:message (str "only s can change the status of items in " curr-item-status)
+            (-> (rr/response {:message (str "only admins can change the status of items in " curr-item-status)
                               :data    patch
                               :type    :authorization-required})
                 (rr/status 401))

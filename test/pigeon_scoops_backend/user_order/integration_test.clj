@@ -259,25 +259,27 @@
 
 (deftest bulk-status-update-test
   (let [db             (:db/postgres state/system)
-        recipe-ids     (doall (repeatedly 3 #(parse-uuid (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))))
+        recipe-ids     (doall (repeatedly 3 #(parse-uuid (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe :expected-status 201}) [:body :id]))))
         ;; Create an active menu and add the recipe to it
-        menu-id        (get-in (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body menu}) [:body :id])
+        menu-id        (get-in (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body menu :expected-status 201}) [:body :id])
         menu-item-ids  (mapv #(get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
-                                                        {:use-auth? true :body {:menu-item/recipe-id %}})
+                                                        {:use-auth? true :body {:menu-item/recipe-id %} :expected-status 201})
                                       [:body :id])
                              recipe-ids)
-        _              (mapv #(ts/test-endpoint :post (str "/v1/menus/" menu-id "/sizes")
-                                                {:use-auth? true :body {:menu-item-size/menu-item-id %
-                                                                        :menu-item-size/amount       1
-                                                                        :menu-item-size/amount-unit  :volume/pt}})
+        _              (mapv #(ts/test-endpoint :post (str "/v1/menus/" menu-id "/items/" % "/sizes")
+                                                {:use-auth?       true
+                                                 :body            {:menu-item-size/amount      1
+                                                                   :menu-item-size/amount-unit :volume/pt}
+                                                 :expected-status 201})
                              menu-item-ids)
-        order-id       (parse-uuid (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order}) [:body :id]))
+        order-id       (parse-uuid (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order :expected-status 201}) [:body :id]))
         order-item-map (into {} (map #(let [order-item-body (assoc order-item :order-item/recipe-id %)]
                                         [(get-in (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
-                                                                   {:use-auth? true :use-other-user true :body order-item-body})
+                                                                   {:use-auth? true :use-other-user true :body order-item-body :expected-status 201})
                                                  [:body :id])
                                          order-item-body])
                                      recipe-ids))]
+    (println "AAA" order-item-map)
     (testing "unsubmitted orders are canceled"
       (order-db/bulk-status-update! db {:status/submitted :status/in-progress
                                         :status/draft     :status/canceled}
@@ -293,9 +295,10 @@
        (map (fn [[item-id body]]
               (when (= (:order-item/recipe-id body) (first recipe-ids))
                 (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" item-id "/status")
-                                  {:use-auth?      true
-                                   :use-other-user true
-                                   :body           {:order-item/status :status/submitted}})))
+                                  {:use-auth?       true
+                                   :use-other-user  true
+                                   :body            {:order-item/status :status/submitted}
+                                   :expected-status 204})))
             order-item-map))
       (order-db/bulk-status-update! db {:status/submitted :status/in-progress
                                         :status/draft     :status/canceled}
@@ -311,10 +314,11 @@
        (map (fn [[item-id body]]
               (when (= (:order-item/recipe-id body) (first recipe-ids))
                 (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" item-id "/status")
-                                  {:use-auth?      true
-                                   :use-other-user true
-                                   :body           (assoc body
-                                                          :order-item/status :status/complete)})))
+                                  {:use-auth?       true
+                                   :use-other-user  true
+                                   :body            (assoc body
+                                                           :order-item/status :status/complete)
+                                   :expected-status 201})))
             order-item-map))
       (order-db/bulk-status-update! db {:status/submitted :status/in-progress
                                         :status/draft     :status/canceled}

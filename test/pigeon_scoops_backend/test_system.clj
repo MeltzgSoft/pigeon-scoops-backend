@@ -68,7 +68,8 @@
 (defn test-endpoint
   ([method uri]
    (test-endpoint method uri nil))
-  ([method uri {:keys [use-other-user params use-auth? body retry-status]}]
+  ([method uri {:keys [use-other-user params use-auth? body retry-status expected-status]
+                :or   {expected-status 200}}]
    (let [app      (-> state/system :server/routes)
          user     (if use-other-user (second @test-users) (first @test-users))
          token    (or (if use-other-user (second @tokens) (first @tokens))
@@ -89,6 +90,12 @@
                                               (println "FAILED TO DECODE" % "RESPONSE" response)
                                               (throw e))))]
      (println method uri response)
+     (when-not (= expected-status (:status response))
+       (throw (ex-info "did not recieve expected status"
+                       {:expected-status expected-status
+                        :acutual-status  (:status response)
+                        :request         request
+                        :response        response})))
      response)))
 
 (defn port-available? [port]
@@ -177,7 +184,7 @@
                    (reset! test-users (mapv #(hash-map :uid %1 :username %2) uids usernames))
                    (reset! tokens (mapv make-test-token @test-users))
                    (when manage-user?
-                     (mapv #(test-endpoint :post "/v1/account" {:use-auth? true :use-other-user %}) [true false]))))
+                     (mapv #(test-endpoint :post "/v1/account" {:use-auth? true :use-other-user % :expected-status 201}) [true false]))))
      :teardown (fn []
                  (reset! tokens nil)
                  (reset! test-roles {}))
