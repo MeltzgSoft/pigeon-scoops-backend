@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.test-system
   (:require [buddy.sign.jwt :as jwt-sign]
+            [clojure.pprint :refer [pprint]]
             [clojure.test :refer [do-report]]
             [environ.core :refer [env]]
             [integrant.core :as ig]
@@ -68,34 +69,40 @@
 (defn test-endpoint
   ([method uri]
    (test-endpoint method uri nil))
-  ([method uri {:keys [use-other-user params use-auth? body retry-status expected-status]
-                :or   {expected-status 200}}]
-   (let [app      (-> state/system :server/routes)
-         user     (if use-other-user (second @test-users) (first @test-users))
-         token    (or (if use-other-user (second @tokens) (first @tokens))
-                      (make-test-token user))
-         request  (-> (mock/request method uri params)
-                      (cond-> use-auth? (mock/header :authorization (str "Bearer " token))
-                              body (mock/json-body body)))
-         response (loop [resp (app request)]
-                    (if (or (not retry-status)
-                            (not= (:status resp) retry-status))
-                      resp
-                      (do
-                        (println "request failed. retrying" resp)
-                        (recur (app request)))))
-         response (update response :body #(try
-                                            (m/decode "application/json" %)
-                                            (catch Exception e
-                                              (println "FAILED TO DECODE" % "RESPONSE" response)
-                                              (throw e))))]
+  ([method uri {:keys [use-other-user params use-auth? body retry-status expected-status]}]
+   (let [expected-status (or expected-status (method {:delete 204
+                                                      :get    200
+                                                      :post   201
+                                                      :put    204}))
+
+         app             (-> state/system :server/routes)
+         user            (if use-other-user (second @test-users) (first @test-users))
+         token           (or (if use-other-user (second @tokens) (first @tokens))
+                             (make-test-token user))
+         request         (-> (mock/request method uri params)
+                             (cond-> use-auth? (mock/header :authorization (str "Bearer " token))
+                                     body (mock/json-body body)))
+         response        (loop [resp (app request)]
+                           (if (or (not retry-status)
+                                   (not= (:status resp) retry-status))
+                             resp
+                             (do
+                               (println "request failed. retrying" resp)
+                               (recur (app request)))))
+         response        (update response :body #(try
+                                                   (m/decode "application/json" %)
+                                                   (catch Exception e
+                                                     (println "FAILED TO DECODE" % "RESPONSE" response)
+                                                     (throw e))))]
      (println method uri response)
      (when-not (= expected-status (:status response))
-       (throw (ex-info "did not recieve expected status"
-                       {:expected-status expected-status
-                        :acutual-status  (:status response)
-                        :request         request
-                        :response        response})))
+       (let [info {:expected-status expected-status
+                   :acutual-status  (:status response)
+                   :request         request
+                   :response        response}]
+         (pprint info)
+         (throw (ex-info "did not recieve expected status" info))))
+
      response)))
 
 (defn port-available? [port]

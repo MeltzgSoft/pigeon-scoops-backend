@@ -178,7 +178,7 @@
           (cond
             (and (not production-manager?)
                  (not (#{:status/draft :status/submitted :status/canceled} new-status)))
-            (-> (rr/response {:message (str "only s can set the status to " new-status)
+            (-> (rr/response {:message (str "only admins can set the status to " new-status)
                               :data    patch
                               :type    :authorization-required})
                 (rr/status 401))

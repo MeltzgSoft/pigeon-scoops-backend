@@ -3,7 +3,8 @@
             [integrant.repl.state :as state]
             [pigeon-scoops-backend.test-system :as ts]
             [pigeon-scoops-backend.user-order.db :as order-db]
-            [pigeon-scoops-backend.user-order.schema :refer [status terminal?]]))
+            [pigeon-scoops-backend.user-order.schema :refer [status terminal?]]
+            [clojure.pprint :refer [pprint]]))
 
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture [:manage-recipes :manage-orders :manage-menus :manage-production] [:manage-recipes :manage-orders :manage-menus]))
 
@@ -279,7 +280,7 @@
                                                  [:body :id])
                                          order-item-body])
                                      recipe-ids))]
-    (println "AAA" order-item-map)
+    (pprint order-item-map)
     (testing "unsubmitted orders are canceled"
       (order-db/bulk-status-update! db {:status/submitted :status/in-progress
                                         :status/draft     :status/canceled}
@@ -296,7 +297,6 @@
               (when (= (:order-item/recipe-id body) (first recipe-ids))
                 (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" item-id "/status")
                                   {:use-auth?       true
-                                   :use-other-user  true
                                    :body            {:order-item/status :status/submitted}
                                    :expected-status 204})))
             order-item-map))
@@ -315,10 +315,9 @@
               (when (= (:order-item/recipe-id body) (first recipe-ids))
                 (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" item-id "/status")
                                   {:use-auth?       true
-                                   :use-other-user  true
                                    :body            (assoc body
                                                            :order-item/status :status/complete)
-                                   :expected-status 201})))
+                                   :expected-status 204})))
             order-item-map))
       (order-db/bulk-status-update! db {:status/submitted :status/in-progress
                                         :status/draft     :status/canceled}
