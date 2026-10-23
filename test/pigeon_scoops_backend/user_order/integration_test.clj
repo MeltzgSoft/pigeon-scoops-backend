@@ -61,37 +61,32 @@
                                :body           (assoc order-item :order-item/recipe-id recipe-id)}))
           [[admin-order-id false] [other-order-id true]])
     (testing "List orders"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true})
-            body                  (map #(update % :user-order/id parse-uuid) body)]
-        (is (= 200 status))
+      (let [{:keys [body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true})
+            body           (map #(update % :user-order/id parse-uuid) body)]
         (is (pos? (count body)))
         (is ((set (map :user-order/id body)) admin-order-id))
         (is (not ((set (map :user-order/id body)) other-order-id)))
         (is (every? nil? (map :user-order/items body)))))
     (testing "List orders with details"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders?detailed=true&admin=true" {:use-auth? true})
-            body                  (filter #(#{admin-order-id other-order-id} (parse-uuid (:user-order/id %))) body)]
-        (is (= 200 status))
+      (let [{:keys [body]} (ts/test-endpoint :get "/v1/orders?detailed=true&admin=true" {:use-auth? true})
+            body           (filter #(#{admin-order-id other-order-id} (parse-uuid (:user-order/id %))) body)]
         (is (pos? (count body)))
         (is ((set (map (comp parse-uuid :user-order/id) body)) admin-order-id))
         (is ((set (map (comp parse-uuid :user-order/id) body)) other-order-id))
         (is (every? seq (map :user-order/items body)))))
     (testing "List orders. admins can get orders from all users"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :params {:admin true}})
-            body                  (map #(update % :user-order/id parse-uuid) body)]
-        (is (= 200 status))
+      (let [{:keys [body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :params {:admin true}})
+            body           (map #(update % :user-order/id parse-uuid) body)]
         (is (pos? (count body)))
         (is ((set (map :user-order/id body)) admin-order-id))
         (is ((set (map :user-order/id body)) other-order-id))))
     (testing "List orders. non authenticated users cannot get orders from all users"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? false})
-            body                  (map #(update % :user-order/id parse-uuid) body)]
-        (is (= 200 status))
+      (let [{:keys [body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? false})
+            body           (map #(update % :user-order/id parse-uuid) body)]
         (is (zero? (count body)))))
     (testing "List orders. non admins cannot get orders from all users"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :use-other-user true :params {:admin true}})
-            body                  (map #(update % :user-order/id parse-uuid) body)]
-        (is (= 200 status))
+      (let [{:keys [body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :use-other-user true :params {:admin true}})
+            body           (map #(update % :user-order/id parse-uuid) body)]
         (is (pos? (count body)))
         (is (not ((set (map :user-order/id body)) admin-order-id)))
         (is ((set (map :user-order/id body)) other-order-id))))))
@@ -112,54 +107,44 @@
                                                                             :menu-item-size/amount-unit  :volume/pt}})
                                   [:body :id])]
     (testing "create order"
-      (let [{:keys [status body]} (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order})]
-        (reset! order-id (:id body))
-        (is (= status 201))))
+      (let [{:keys [body]} (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order})]
+        (reset! order-id (:id body))))
     (testing "update order"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" @order-id) {:use-auth? true :body updated-order})]
-        (is (= status 204))))
+      (ts/test-endpoint :put (str "/v1/orders/" @order-id) {:use-auth? true :body updated-order}))
     (testing "create order-item"
-      (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
-                                                    {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id)})]
-        (reset! order-item-id (:id body))
-        (is (= status 201))))
+      (let [{:keys [body]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
+                                             {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id)})]
+        (reset! order-item-id (:id body))))
     (testing "production manager can create order-item for recipe not in an active menu"
-      (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
-                                               {:use-auth? true :body (assoc order-item :order-item/recipe-id other-recipe-id)})]
-        (is (= status 201))))
+      (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
+                        {:use-auth? true :body (assoc order-item :order-item/recipe-id other-recipe-id)}))
     (testing "production manager can create order-item for an invalid size"
-      (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
-                                               {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id :order-item/amount-unit :volume/c)})]
-        (is (= status 201))))
+      (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
+                        {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id :order-item/amount-unit :volume/c)}))
     (testing "update order-item"
-      (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
-                                               {:use-auth?       true :body (assoc updated-order-item
-                                                                             :order-item/recipe-id recipe-id)
-                                                :expected-status 204})]
-        (is (= status 204))))
+      (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
+                        {:use-auth?       true :body (assoc updated-order-item
+                                                      :order-item/recipe-id recipe-id)
+                         :expected-status 204}))
     (testing "production manager can update order-item for recipe not in an active menu"
-      (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
-                                               {:use-auth?       true :body (assoc order-item
-                                                                             :order-item/recipe-id other-recipe-id)
-                                                :expected-status 204})]
-        (is (= status 204))))
+      (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
+                        {:use-auth?       true :body (assoc order-item
+                                                      :order-item/recipe-id other-recipe-id)
+                         :expected-status 204}))
     (testing "production manager can update order-item for an invalid size"
-      (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
-                                               {:use-auth?       true :body (assoc order-item
-                                                                             :order-item/recipe-id recipe-id
-                                                                             :order-item/amount-unit :volume/c)
-                                                :expected-status 204})]
-        (is (= status 204))))
+      (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
+                        {:use-auth?       true :body (assoc order-item
+                                                      :order-item/recipe-id recipe-id
+                                                      :order-item/amount-unit :volume/c)
+                         :expected-status 204}))
     (testing "update order-item status"
-      (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id "/status")
-                                               {:use-auth?       true :body {:order-item/status :status/complete}
-                                                :expected-status 204})]
-        (is (= status 204))))
+      (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id "/status")
+                        {:use-auth?       true :body {:order-item/status :status/complete}
+                         :expected-status 204}))
     (testing "cannot delete orders with items"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id)
-                                               {:use-auth?       true
-                                                :expected-status 400})]
-        (is (= status 400))))
+      (ts/test-endpoint :delete (str "/v1/orders/" @order-id)
+                        {:use-auth?       true
+                         :expected-status 400}))
     (testing "can delete orders with no items"
       (->> (ts/test-endpoint :get (str "/v1/orders/" @order-id) {:use-auth? true})
            :body
@@ -172,89 +157,70 @@
                         (ts/test-endpoint :delete (str "/v1/orders/" @order-id "/items/" item-id)
                                           {:use-auth? true})))))
            (dorun))
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id)
-                                               {:use-auth? true})]
-        (is (= status 204))))
+      (ts/test-endpoint :delete (str "/v1/orders/" @order-id)
+                        {:use-auth? true}))
     (let [{:keys [body]} (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order})
           order-id       (:id body)
           order-item-id  (atom nil)]
       (testing "other user can create order item for active recipe"
-        (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
-                                                      {:use-auth? true :use-other-user true
-                                                       :body
-                                                       (assoc order-item :order-item/recipe-id recipe-id
-                                                              :order-item/menu-item-size-id menu-item-size-id)})
-              {order-body :body}    (ts/test-endpoint :get (str "/v1/orders/" order-id)
-                                                      {:use-auth? true :use-other-user true})]
+        (let [{:keys [body]}     (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                                                   {:use-auth? true :use-other-user true
+                                                    :body
+                                                    (assoc order-item :order-item/recipe-id recipe-id
+                                                           :order-item/menu-item-size-id menu-item-size-id)})
+              {order-body :body} (ts/test-endpoint :get (str "/v1/orders/" order-id)
+                                                   {:use-auth? true :use-other-user true})]
           (reset! order-item-id (:id body))
-          (is (= status 201) (str body))
           (is (= (-> order-body
                      :user-order/items
                      (first)
                      :order-item/menu-item-size-quantity)
                  2.0))))
       (testing "other user cannot create order-item for recipe not in an active menu"
-        (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
-                                                      {:use-auth?       true
-                                                       :use-other-user  true
-                                                       :expected-status 400
-                                                       :body            (assoc order-item :order-item/recipe-id other-recipe-id)})]
-          (is (= status 400) (str body))))
+        (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                          {:use-auth?       true
+                           :use-other-user  true
+                           :expected-status 400
+                           :body            (assoc order-item :order-item/recipe-id other-recipe-id)}))
       (testing "other user cannot create order-item for an invalid size"
-        (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
-                                                 {:use-auth?       true
-                                                  :use-other-user  true
-                                                  :expected-status 400
-                                                  :body            (assoc order-item :order-item/recipe-id recipe-id :order-item/amount-unit :volume/c)})]
-          (is (= status 400))))
+        (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                          {:use-auth?       true
+                           :use-other-user  true
+                           :expected-status 400
+                           :body            (assoc order-item :order-item/recipe-id recipe-id :order-item/amount-unit :volume/c)}))
       (testing "other user cannot update order-item for recipe not in an active menu"
-        (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id)
-                                                 {:use-auth?       true :use-other-user true :body (assoc order-item
-                                                                                                    :order-item/recipe-id other-recipe-id)
-                                                  :expected-status 400})]
-          (is (= status 400))))
+        (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id)
+                          {:use-auth?       true :use-other-user true :body (assoc order-item
+                                                                             :order-item/recipe-id other-recipe-id)
+                           :expected-status 400}))
       (testing "other user cannot update order-item for an invalid size"
-        (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id)
-                                                 {:use-auth?       true :use-other-user true :body (assoc order-item
-                                                                                                    :order-item/recipe-id recipe-id
-                                                                                                    :order-item/amount-unit :volume/c)
-                                                  :expected-status 400})]
-          (is (= status 400))))
+        (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id)
+                          {:use-auth?       true :use-other-user true :body (assoc order-item
+                                                                             :order-item/recipe-id recipe-id
+                                                                             :order-item/amount-unit :volume/c)
+                           :expected-status 400}))
       (testing "non production manager can't move items into in progress/completed"
-        (are [status]
-             (= (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
-                                           {:use-auth?       true :use-other-user true :body {:order-item/status status}
-                                            :expected-status 401}))
-                401)
-          :status/in-progress
-          :status/complete))
+        (doseq [status [:status/in-progress :status/complete]]
+          (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
+                            {:use-auth?       true :use-other-user true :body {:order-item/status status}
+                             :expected-status 401})))
       (testing "non production manager can't change the status of items that are in progress, completed or canceled"
-        (are [status]
-             (do
-               (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
-                                 {:use-auth? true :expected-status 204 :body {:order-item/status status}})
-               (= (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
-                                             {:use-auth?       true :use-other-user true :body {:order-item/status :status/draft}
-                                              :expected-status 401}))
-                  401))
-          :status/canceled
-          :status/complete
-          :status/in-progress))
+        (doseq [status [:status/canceled :status/complete :status/in-progress]]
+          (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
+                            {:use-auth? true :expected-status 204 :body {:order-item/status status}})
+          (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
+                            {:use-auth?       true :use-other-user true :body {:order-item/status :status/draft}
+                             :expected-status 401})))
       (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
                         {:use-auth? true :expected-status 204 :body {:order-item/status :status/draft}})
       (testing "non production manager can change the status of items that are not in progress, completed or canceled"
-        (are [status]
-             (= (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
-                                           {:use-auth?       true :use-other-user true :body {:order-item/status status}
-                                            :expected-status 204}))
-                204)
-          :status/submitted
-          :status/draft
-          :status/canceled)))
+        (doseq [status [:status/submitted :status/draft :status/canceled]]
+          (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
+                            {:use-auth?       true :use-other-user true :body {:order-item/status status}
+                             :expected-status 204}))))
     (testing "retrieve order bom"
-      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/orders/" @order-id "/bom")
-                                               {:use-auth? true})]
-        (is (= status 200))))
+      (ts/test-endpoint :get (str "/v1/orders/" @order-id "/bom")
+                        {:use-auth? true}))
     (testing "can only delete order item that are not in a terminal state"
       (mapv #(let [order-item-id (-> (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
                                                        {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id)})
@@ -270,23 +236,22 @@
 
 (deftest bulk-status-update-test
   (let [db             (:db/postgres state/system)
-        recipe-ids     (doall (repeatedly 3 #(parse-uuid (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe :expected-status 201}) [:body :id]))))
+        recipe-ids     (doall (repeatedly 3 #(parse-uuid (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))))
         ;; Create an active menu and add the recipe to it
-        menu-id        (get-in (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body menu :expected-status 201}) [:body :id])
+        menu-id        (get-in (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body menu}) [:body :id])
         menu-item-ids  (mapv #(get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
-                                                        {:use-auth? true :body {:menu-item/recipe-id %} :expected-status 201})
+                                                        {:use-auth? true :body {:menu-item/recipe-id %}})
                                       [:body :id])
                              recipe-ids)
         _              (mapv #(ts/test-endpoint :post (str "/v1/menus/" menu-id "/items/" % "/sizes")
-                                                {:use-auth?       true
-                                                 :body            {:menu-item-size/amount      1
-                                                                   :menu-item-size/amount-unit :volume/pt}
-                                                 :expected-status 201})
+                                                {:use-auth? true
+                                                 :body      {:menu-item-size/amount      1
+                                                             :menu-item-size/amount-unit :volume/pt}})
                              menu-item-ids)
-        order-id       (parse-uuid (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order :expected-status 201}) [:body :id]))
+        order-id       (parse-uuid (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order}) [:body :id]))
         order-item-map (into {} (map #(let [order-item-body (assoc order-item :order-item/recipe-id %)]
                                         [(get-in (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
-                                                                   {:use-auth? true :use-other-user true :body order-item-body :expected-status 201})
+                                                                   {:use-auth? true :use-other-user true :body order-item-body})
                                                  [:body :id])
                                          order-item-body])
                                      recipe-ids))]
@@ -377,8 +342,7 @@
           (take 2 order-item-ids))
 
     (testing "in progress are moved to complete. Other items are not"
-      (is (= (:status (ts/test-endpoint :post (str "/v1/production/" recipe-id) {:use-auth? true :expected-status 204}))
-             204))
+      (ts/test-endpoint :post (str "/v1/production/" recipe-id) {:use-auth? true :expected-status 204})
       (let [updated-items (map (partial order-db/find-order-item-by-id! db) order-item-ids)]
         (are [updated-item expected-status]
              (= (:order-item/status updated-item) expected-status)
@@ -404,49 +368,45 @@
         order-item-id-1   (atom nil)
         order-item-id-2   (atom nil)]
     (testing "create order items (draft, no quantity consumed yet)"
-      (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" order-id-1 "/items")
-                                                    {:use-auth? true :use-other-user true :body order-item-body})]
-        (reset! order-item-id-1 (:id body))
-        (is (= 201 status)))
-      (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" order-id-2 "/items")
-                                                    {:use-auth? true :use-other-user true :body order-item-body})]
-        (reset! order-item-id-2 (:id body))
-        (is (= 201 status))))
+      (let [{:keys [body]} (ts/test-endpoint :post (str "/v1/orders/" order-id-1 "/items")
+                                             {:use-auth? true :use-other-user true :body order-item-body})]
+        (reset! order-item-id-1 (:id body)))
+      (let [{:keys [body]} (ts/test-endpoint :post (str "/v1/orders/" order-id-2 "/items")
+                                             {:use-auth? true :use-other-user true :body order-item-body})]
+        (reset! order-item-id-2 (:id body))))
     (testing "submitting first order item decrements available quantity"
-      (is (= 204 (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id-1 "/items/" @order-item-id-1 "/status")
-                                            {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/submitted}})))))
+      (ts/test-endpoint :patch (str "/v1/orders/" order-id-1 "/items/" @order-item-id-1 "/status")
+                        {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/submitted}}))
     (testing "submitting second order item decrements available quantity to zero"
-      (is (= 204 (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id-2 "/items/" @order-item-id-2 "/status")
-                                            {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/submitted}})))))
+      (ts/test-endpoint :patch (str "/v1/orders/" order-id-2 "/items/" @order-item-id-2 "/status")
+                        {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/submitted}}))
     (testing "third order item cannot be submitted when available quantity is exhausted"
       (let [order-id-3      (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order}) [:body :id])
             order-item-id-3 (get-in (ts/test-endpoint :post (str "/v1/orders/" order-id-3 "/items")
                                                       {:use-auth? true :use-other-user true :body order-item-body})
                                     [:body :id])]
-        (is (= 400 (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id-3 "/items/" order-item-id-3 "/status")
-                                              {:use-auth? true :use-other-user true :expected-status 400 :body {:order-item/status :status/submitted}}))))))
+        (ts/test-endpoint :patch (str "/v1/orders/" order-id-3 "/items/" order-item-id-3 "/status")
+                          {:use-auth? true :use-other-user true :expected-status 400 :body {:order-item/status :status/submitted}})))
     (testing "reverting a submitted order item to draft restores available quantity"
-      (is (= 204 (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id-1 "/items/" @order-item-id-1 "/status")
-                                            {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/draft}}))))
+      (ts/test-endpoint :patch (str "/v1/orders/" order-id-1 "/items/" @order-item-id-1 "/status")
+                        {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/draft}})
       (let [order-id-4      (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order}) [:body :id])
             order-item-id-4 (get-in (ts/test-endpoint :post (str "/v1/orders/" order-id-4 "/items")
                                                       {:use-auth? true :use-other-user true :body order-item-body})
                                     [:body :id])]
-        (is (= 204 (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id-4 "/items/" order-item-id-4 "/status")
-                                              {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/submitted}}))))))
+        (ts/test-endpoint :patch (str "/v1/orders/" order-id-4 "/items/" order-item-id-4 "/status")
+                          {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/submitted}})))
     (testing "deleting a submitted order item restores available quantity"
       (let [order-id-5      (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order}) [:body :id])
             order-item-id-5 (get-in (ts/test-endpoint :post (str "/v1/orders/" order-id-5 "/items")
                                                       {:use-auth? true :use-other-user true :body order-item-body})
                                     [:body :id])]
-        (is (= 400 (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id-5 "/items/" order-item-id-5 "/status")
-                                              {:use-auth? true :use-other-user true :expected-status 400 :body {:order-item/status :status/submitted}})))
-            "exhausted before delete")
+        (ts/test-endpoint :patch (str "/v1/orders/" order-id-5 "/items/" order-item-id-5 "/status")
+                          {:use-auth? true :use-other-user true :expected-status 400 :body {:order-item/status :status/submitted}})
         (ts/test-endpoint :delete (str "/v1/orders/" order-id-2 "/items/" @order-item-id-2)
                           {:use-auth? true :use-other-user true})
-        (is (= 204 (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id-5 "/items/" order-item-id-5 "/status")
-                                              {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/submitted}})))
-            "succeeds after deleting a submitted item")))
+        (ts/test-endpoint :patch (str "/v1/orders/" order-id-5 "/items/" order-item-id-5 "/status")
+                          {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/submitted}})))
     (testing "negative available-quantity means unlimited; submission always succeeds"
       (let [unlimited-size-id   (get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items/" menu-item-id "/sizes")
                                                           {:use-auth? true :body {:menu-item-size/amount             1
@@ -460,6 +420,6 @@
                 iid (get-in (ts/test-endpoint :post (str "/v1/orders/" oid "/items")
                                               {:use-auth? true :use-other-user true :body unlimited-item-body})
                             [:body :id])]
-            (is (= 204 (:status (ts/test-endpoint :patch (str "/v1/orders/" oid "/items/" iid "/status")
-                                                  {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/submitted}}))))))))))
+            (ts/test-endpoint :patch (str "/v1/orders/" oid "/items/" iid "/status")
+                              {:use-auth? true :use-other-user true :expected-status 204 :body {:order-item/status :status/submitted}})))))))
 

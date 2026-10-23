@@ -30,13 +30,11 @@
   (testing "List recipes"
     (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe})
     (testing "with auth"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/recipes" {:use-auth? true})]
-        (is (= 200 status))
+      (let [{:keys [body]} (ts/test-endpoint :get "/v1/recipes" {:use-auth? true})]
         (is (vector? body))
         (is (seq body))))
     (testing "without auth"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/recipes" {:use-auth? false})]
-        (is (= 200 status))
+      (let [{:keys [body]} (ts/test-endpoint :get "/v1/recipes" {:use-auth? false})]
         (is (vector? body))
         (is (seq body))))))
 
@@ -45,45 +43,34 @@
         ingredient-id (atom nil)
         grocery-id    (get-in (ts/test-endpoint :post "/v1/groceries" {:use-auth? true :body grocery}) [:body :id])]
     (testing "create recipe"
-      (let [{:keys [status body]} (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe})]
-        (reset! recipe-id (:id body))
-        (is (= status 201))))
+      (let [{:keys [body]} (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe})]
+        (reset! recipe-id (:id body))))
     (testing "update recipe"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id) {:use-auth? true :body updated-recipe})]
-        (is (= status 204))))
+      (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id) {:use-auth? true :body updated-recipe}))
     (testing "create ingredient from recipe"
-      (let [ingredient            (assoc ingredient :ingredient/ingredient-recipe-id @recipe-id)
-            {:keys [status body]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/ingredients") {:use-auth? true :body ingredient})]
-        (reset! ingredient-id (:id body))
-        (is (= status 201))))
+      (let [ingredient     (assoc ingredient :ingredient/ingredient-recipe-id @recipe-id)
+            {:keys [body]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/ingredients") {:use-auth? true :body ingredient})]
+        (reset! ingredient-id (:id body))))
     (testing "update ingredient"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients/" @ingredient-id)
-                                               {:use-auth? true :body (assoc ingredient
-                                                                             :ingredient/amount 3000
-                                                                             :ingredient/ingredient-recipe-id @recipe-id)})]
-        (is (= status 204))))
+      (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients/" @ingredient-id)
+                        {:use-auth? true :body (assoc ingredient
+                                                      :ingredient/amount 3000
+                                                      :ingredient/ingredient-recipe-id @recipe-id)}))
     (testing "switching from recipe to grocery ingredient"
-      (let [ingredient       (-> ingredient
-                                 (assoc :ingredient/ingredient-grocery-id grocery-id)
-                                 (dissoc :ingredient/ingredient-recipe-id))
-            {:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients/" @ingredient-id) {:use-auth? true :body ingredient})]
-        (is (= status 204))))
+      (let [ingredient (-> ingredient
+                           (assoc :ingredient/ingredient-grocery-id grocery-id)
+                           (dissoc :ingredient/ingredient-recipe-id))]
+        (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients/" @ingredient-id) {:use-auth? true :body ingredient})))
     (testing "create ingredient from grocery"
-      (let [ingredient       (assoc ingredient :ingredient/ingredient-grocery-id grocery-id)
-            {:keys [status]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/ingredients") {:use-auth? true :body ingredient})]
-        (is (= status 201))))
+      (let [ingredient (assoc ingredient :ingredient/ingredient-grocery-id grocery-id)]
+        (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/ingredients") {:use-auth? true :body ingredient})))
     (testing "retrieve recipe"
-      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id) {:use-auth? true})]
-        (is (= status 200))))
+      (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id) {:use-auth? true}))
     (testing "retrieve scaled"
-      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id) {:use-auth? true :params {:amount 5 :amount-unit "mass/g"}})]
-        (is (= status 200))))
+      (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id) {:use-auth? true :params {:amount 5 :amount-unit "mass/g"}}))
     (testing "retrieve bom"
-      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id "/bom") {:use-auth? true :params {:amount 5 :amount-unit "mass/g"}})]
-        (is (= status 200))))
+      (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id "/bom") {:use-auth? true :params {:amount 5 :amount-unit "mass/g"}}))
     (testing "delete ingredient"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients/" @ingredient-id) {:use-auth? true})]
-        (is (= status 204))))
+      (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients/" @ingredient-id) {:use-auth? true}))
     (testing "delete recipe"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id) {:use-auth? true})]
-        (is (= status 204))))))
+      (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id) {:use-auth? true}))))

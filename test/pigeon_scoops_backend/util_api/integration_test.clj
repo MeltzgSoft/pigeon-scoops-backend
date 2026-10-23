@@ -6,8 +6,7 @@
 
 (deftest constants-test
   (testing "returns constants without auth"
-    (let [{:keys [status body]} (ts/test-endpoint :get "/v1/constants" {:use-auth? false})]
-      (is (= 200 status))
+    (let [{:keys [body]} (ts/test-endpoint :get "/v1/constants" {:use-auth? false})]
       (is (contains? body :constants/unit-types))
       (is (contains? body :constants/departments))
       (is (contains? body :constants/roles))
@@ -19,5 +18,4 @@
       (is (seq (:constants/order-statuses body)))
       (is (seq (:constants/menu-durations body)))))
   (testing "returns constants with auth"
-    (let [{:keys [status]} (ts/test-endpoint :get "/v1/constants" {:use-auth? true})]
-      (is (= 200 status)))))
+    (ts/test-endpoint :get "/v1/constants" {:use-auth? true})))
