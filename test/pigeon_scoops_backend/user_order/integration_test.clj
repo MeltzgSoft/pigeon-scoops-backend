@@ -280,13 +280,12 @@
                                                  [:body :id])
                                          order-item-body])
                                      recipe-ids))]
-    (pprint order-item-map)
     (testing "unsubmitted orders are canceled"
       (order-db/bulk-status-update! db {:status/submitted :status/in-progress
                                         :status/draft     :status/canceled}
                                     (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
-                            (order-db/find-all-order-items! db order-id))]
+                            (apply concat (vals (order-db/find-all-order-items! db order-id))))]
         (is (every? #(= (:order-item/status %) :status/canceled)
                     (get items true)))
         (is (every? #(= (:order-item/status %) :status/draft)
@@ -304,7 +303,7 @@
                                         :status/draft     :status/canceled}
                                     (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
-                            (order-db/find-all-order-items! db order-id))]
+                            (apply concat (vals (order-db/find-all-order-items! db order-id))))]
         (is (every? #(= (:order-item/status %) :status/in-progress)
                     (get items true)))
         (is (every? #(= (:order-item/status %) :status/draft)
@@ -323,7 +322,7 @@
                                         :status/draft     :status/canceled}
                                     (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
-                            (order-db/find-all-order-items! db order-id))]
+                            (apply concat (vals (order-db/find-all-order-items! db order-id))))]
         (is (every? #(= (:order-item/status %) :status/complete)
                     (get items true)))
         (is (every? #(= (:order-item/status %) :status/draft)
