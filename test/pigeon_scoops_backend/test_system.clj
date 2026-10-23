@@ -1,7 +1,6 @@
 (ns pigeon-scoops-backend.test-system
   (:require [buddy.sign.jwt :as jwt-sign]
-            [clojure.pprint :refer [pprint]]
-            [clojure.test :refer [do-report]]
+            [clojure.test :refer [do-report is]]
             [environ.core :refer [env]]
             [integrant.core :as ig]
             [integrant.repl :as ig-repl]
@@ -95,14 +94,7 @@
                                                      (println "FAILED TO DECODE" % "RESPONSE" response)
                                                      (throw e))))]
      (println method uri response)
-     (when-not (= expected-status (:status response))
-       (let [info {:expected-status expected-status
-                   :acutual-status  (:status response)
-                   :request         request
-                   :response        response}]
-         (pprint info)
-         (throw (ex-info "did not recieve expected status" info))))
-
+     (is (= expected-status (:status response)))
      response)))
 
 (defn port-available? [port]

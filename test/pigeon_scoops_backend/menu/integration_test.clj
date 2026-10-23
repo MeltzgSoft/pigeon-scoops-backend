@@ -133,20 +133,20 @@
           other-menu-id  (:id body)]
       (testing "cannot update menu item without matching menu id"
         (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/menus/" other-menu-id "/items/" @menu-item-id)
-                                                 {:use-auth? true :body {:menu-item/recipe-id (second recipe-ids)}})]
+                                                 {:use-auth? true :expected-status 400 :body {:menu-item/recipe-id (second recipe-ids)}})]
           (is (= status 400))))
       (testing "cannot update menu item size without matching menu id"
         (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/menus/" other-menu-id "/items/" @menu-item-id "/sizes/" @menu-item-size-id)
-                                                 {:use-auth? true :body {:menu-item-size/amount      3
-                                                                         :menu-item-size/amount-unit :volume/gal}})]
+                                                 {:use-auth? true :expected-status 400 :body {:menu-item-size/amount      3
+                                                                                              :menu-item-size/amount-unit :volume/gal}})]
           (is (= status 400))))
       (testing "cannot delete menu item size without matching menu id"
         (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" other-menu-id "/items/" @menu-item-id "/sizes/" @menu-item-size-id)
-                                                 {:use-auth? true})]
+                                                 {:use-auth? true :expected-status 400})]
           (is (= status 400))))
       (testing "cannot delete menu item without matching menu id"
         (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" other-menu-id "/items/" @menu-item-id)
-                                                 {:use-auth? true})]
+                                                 {:use-auth? true :expected-status 400})]
           (is (= status 400)))))
     (testing "delete menu item size"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id "/items/" @menu-item-id "/sizes/" @menu-item-size-id)

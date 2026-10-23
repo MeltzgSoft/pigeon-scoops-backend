@@ -15,8 +15,7 @@
             [pigeon-scoops-backend.db]
             [pigeon-scoops-backend.db-tasks]
             [pigeon_scoops_backend.server]
-            [pigeon-scoops-backend.units.common :as common]
-            [pigeon-scoops-backend.units.schema :as unit-schema])
+            [pigeon-scoops-backend.units.common :as common])
   (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
@@ -291,10 +290,8 @@
          :user-order "orders"})))))
   (common/convert 1 :volume/floz :volume/tbsp)
   (m/coerce :string 22)
-  {:mass unit-schema/mass-enum :volume unit-schema/volume-enum :common unit-schema/common-enum :all unit-schema/all-units-enum}
   (go!)
-  (go! false)
-  @tokens
+  (go!)
   (halt!)
   (ig-reset!)
   (ig-reset-all!))
