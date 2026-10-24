@@ -24,7 +24,10 @@
 (defn- router-config [jwt-config]
   {:validate  rs/validate
    :exception pretty/exception
-   :data      {:coercion   coercion-malli/coercion
+   :data      {:coercion   (coercion-malli/create
+                            (assoc-in coercion-malli/default-options
+                                      [:transformers :body :formats "application/transit+json"]
+                                      coercion-malli/json-transformer-provider))
                :muuntaja   m/instance
                :middleware [[wrap-cors
                              :access-control-allow-origin [#"http://localhost:3000"
@@ -32,9 +35,7 @@
                              :access-control-allow-methods [:get :patch :post :put :delete]]
                             swagger/swagger-feature
                             muuntaja/format-middleware
-                            (exception/create-exception-middleware
-                             (assoc exception/default-handlers
-                                    ::exception/wrap exception/wrap-log-to-console))
+                            exception/exception-middleware
                             wrap-params
                             coercion/coerce-request-middleware
                             coercion/coerce-response-middleware
