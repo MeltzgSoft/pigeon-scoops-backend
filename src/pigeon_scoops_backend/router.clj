@@ -35,7 +35,9 @@
                              :access-control-allow-methods [:get :patch :post :put :delete]]
                             swagger/swagger-feature
                             muuntaja/format-middleware
-                            exception/exception-middleware
+                            (exception/create-exception-middleware
+                             (assoc exception/default-handlers
+                                    ::exception/wrap exception/wrap-log-to-console))
                             wrap-params
                             coercion/coerce-request-middleware
                             coercion/coerce-response-middleware

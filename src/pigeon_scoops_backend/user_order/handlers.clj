@@ -276,6 +276,7 @@
                                                   (when-not separate-sizes?
                                                     [:order-item/menu-item-size-id
                                                      :order-item/menu-item-size-quantity])))))
+          (#(apply (partial order-db/assoc-item-size-quantity! db) %))
           (rr/response)))))
 
 (defn complete-orders-for-recipe! [db]

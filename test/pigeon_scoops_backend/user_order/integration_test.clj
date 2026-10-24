@@ -305,24 +305,58 @@
 
 (deftest list-in-progress-items-test
   (let [db         (:db/postgres state/system)
-        recipe-ids (doall (repeatedly 2 #(parse-uuid (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))))
-        order-id   (parse-uuid (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order}) [:body :id]))]
-    (mapv #(let [order-item-body (assoc order-item :order-item/recipe-id %)]
-             [(get-in (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
-                                        {:use-auth? true :body order-item-body})
-                      [:body :id])
-              order-item-body])
-          (apply concat (repeat 2 recipe-ids)))
+        recipe-ids (mapv (fn [_]
+                           (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))
+                         (range 2))
+        menu-id    (get-in (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body menu}) [:body :id])
+        menu-items (mapv (fn [recipe-id]
+                           (let [menu-item-id (get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
+                                                                        {:use-auth? true :body {:menu-item/recipe-id recipe-id}})
+                                                      [:body :id])]
+                             {:recipe-id recipe-id
+                              :sizes     (mapv (fn [amount]
+                                                 {:amount amount
+                                                  :id     (get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items/" menu-item-id "/sizes")
+                                                                                    {:use-auth? true
+                                                                                     :body      {:menu-item-size/amount      amount
+                                                                                                 :menu-item-size/amount-unit :volume/qt}})
+                                                                  [:body :id])})
+                                               [1 2])}))
+                         recipe-ids)
+        order-id   (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order}) [:body :id])]
+    ;; Each recipe has two sizes, with two order items (one and two containers) per size.
+    (doseq [{:keys [recipe-id sizes]} menu-items
+            {:keys [id amount]}       sizes
+            quantity                  [1 2]]
+      (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                        {:use-auth? true
+                         :body      (assoc order-item
+                                           :order-item/recipe-id recipe-id
+                                           :order-item/menu-item-size-id id
+                                           :order-item/amount (* amount quantity))}))
     (order-db/bulk-status-update! db {:status/draft :status/in-progress}
-                                  (first recipe-ids))
-    (testing "in progress items are consolidated and returned"
-      (let [consolidated-items (:body (ts/test-endpoint :get "/v1/production" {:use-auth? true}))]
-        (is (= (count consolidated-items) 1))
-        (is (= (parse-uuid (:order-item/recipe-id (first consolidated-items))) (first recipe-ids)))
-        (is (= (:order-item/amount (first consolidated-items))
-               (->> order-item
-                    :order-item/amount
-                    (* 2.0))))))))
+                                  (parse-uuid (first recipe-ids)))
+    (testing "separate-sizes=true combines items of the same size and keeps different sizes separate"
+      (let [items   (:body (ts/test-endpoint :get "/v1/production?separate-sizes=true" {:use-auth? true}))
+            by-size (into {} (map (juxt :order-item/menu-item-size-id identity)) items)]
+        (is (= 2 (count items)))
+        (is (= (set (map :id (:sizes (first menu-items)))) (set (keys by-size))))
+        (doseq [{:keys [id amount]} (:sizes (first menu-items))]
+          (let [item (get by-size id)]
+            (is (= {:order-item/recipe-id         (first recipe-ids)
+                    :order-item/status            "status/in-progress"
+                    :order-item/amount            (* 3.0 amount)
+                    :order-item/amount-unit       "volume/qt"
+                    :order-item/menu-item-size-id id}
+                   (dissoc item :order-item/menu-item-size-quantity)))
+            (is (= 3.0 (:order-item/menu-item-size-quantity item)))))))
+    (testing "separate-sizes=false and the default combine all sizes and omit size fields"
+      (doseq [uri ["/v1/production?separate-sizes=false" "/v1/production"]]
+        (is (= [{:order-item/recipe-id   (first recipe-ids)
+                 :order-item/status      "status/in-progress"
+                 :order-item/amount      9.0
+                 :order-item/amount-unit "volume/qt"}]
+               (:body (ts/test-endpoint :get uri {:use-auth? true}))))))))
 
 (deftest complete-orders-for-recipe-test
   (let [db             (:db/postgres state/system)

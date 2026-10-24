@@ -197,24 +197,28 @@
               (update order
                       :user-order/items
                       (fn [order-items]
-                        (load-entities!
-                         (map (fn [order-item]
-                                (cond-> order-item
-                                  (:order-item/recipe-id order-item)
-                                  (update :order-item/recipe-id #(get-in seed-map [:recipe % :new-id]))
-                                  (:order-item/menu-item-size-id order-item)
-                                  (assoc :order-item/menu-item-size-id (->> seed-map
-                                                                            :menu
-                                                                            (vals)
-                                                                            (mapcat :menu/items)
-                                                                            (mapcat :menu-item/sizes)
-                                                                            (filter (comp (partial = (:order-item/menu-item-size-id order-item))
-                                                                                          :order-item/menu-item-size-id))
-                                                                            (first)
-                                                                            :new-id))))
-                              order-items)
-                         :order-item
-                         (str "orders/" (:new-id order) "/items")))))))))))
+                        (let [loaded-items (load-entities!
+                                            (map (fn [order-item]
+                                                   (cond-> order-item
+                                                     (:order-item/recipe-id order-item)
+                                                     (update :order-item/recipe-id #(get-in seed-map [:recipe % :new-id]))
+                                                     (:order-item/menu-item-size-id order-item)
+                                                     (assoc :order-item/menu-item-size-id (->> seed-map
+                                                                                               :menu
+                                                                                               (vals)
+                                                                                               (mapcat :menu/items)
+                                                                                               (mapcat :menu-item/sizes)
+                                                                                               (filter (comp (partial = (:order-item/menu-item-size-id order-item))
+                                                                                                             :order-item/menu-item-size-id))
+                                                                                               (first)
+                                                                                               :new-id))))
+                                                 order-items)
+                                            :order-item
+                                            (str "orders/" (:new-id order) "/items"))]
+                          (pprint (mapv #(make-request! :patch (str "/v1/orders/" (:new-id order) "/items/" (:new-id %) "/status")
+                                                        {:auth true :body {:order-item/status :status/complete}})
+                                        (vals loaded-items)))
+                          loaded-items))))))))))
 
 (defn init-app! []
   (if (.exists (io/file users-config))
