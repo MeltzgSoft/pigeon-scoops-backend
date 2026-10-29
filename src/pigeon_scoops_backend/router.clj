@@ -5,6 +5,7 @@
             [pigeon-scoops-backend.menu.routes :as menu]
             [pigeon-scoops-backend.middleware :as mw]
             [pigeon-scoops-backend.recipe.routes :as recipe]
+            [pigeon-scoops-backend.ui :as ui]
             [pigeon-scoops-backend.user-order.routes :as user-order]
             [pigeon-scoops-backend.util-api.routes :as util-api]
             [reitit.coercion.malli :as coercion-malli]
@@ -59,7 +60,9 @@
   (wrap-with-logger
    (ring/ring-handler
     (ring/router
-     [openapi-docs
+     [["/"
+       (ui/routes env)]
+      openapi-docs
       ["/v1"
        {:openapi {:security [{"auth" []}]}}
        (grocery/routes env)
@@ -71,9 +74,15 @@
      (router-config (:jwt-config auth)))
     (ring/routes
      (swagger-ui/create-swagger-ui-handler
-      {:path   "/"
+      {:path   "/v1/docs"
        :config {:validatorUrl     nil
-                :urls             [{:name "openapi", :url "openapi.json"}]
+                :urls             [{:name "openapi", :url "/openapi.json"}]
                 :urls.primaryName "openapi"
                 :operationsSorter "alpha"}})
+     (ring/create-resource-handler
+      {:path "/webjars"
+       :root "META-INF/resources/webjars"})
+     (ring/create-resource-handler
+      {:path "/"
+       :root "public"})
      (ring/create-default-handler)))))
